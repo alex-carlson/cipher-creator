@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { onMount, tick } from 'svelte';
+	import { Plus, RotateCcw, Trash2 } from 'lucide-svelte';
 
 	type Glyph = {
 		id: number;
@@ -31,6 +32,7 @@
 		context.strokeStyle = '#111827';
 		context.fillStyle = '#ffffff';
 		context.fillRect(0, 0, canvas.width, canvas.height);
+
 		contextMap.set(glyphId, context);
 	};
 
@@ -100,11 +102,13 @@
 		}
 
 		const encodedChars = [...message.toUpperCase()].map((char) => lookup.get(char) ?? char);
-		const glyphCellWidth = 128;
-		const glyphCellHeight = 128;
-		const gap = 6;
-		const canvasWidth = Math.max(encodedChars.length * glyphCellWidth + (encodedChars.length - 1) * gap, glyphCellWidth);
-		const canvasHeight = glyphCellHeight;
+		const glyphCellWidth = 64;
+		const glyphCellHeight = 64;
+		const gap = 8;
+		const maxPerRow = 12;
+		const rowCount = Math.max(1, Math.ceil(encodedChars.length / maxPerRow));
+		const canvasWidth = Math.max(Math.min(encodedChars.length, maxPerRow) * glyphCellWidth + (Math.min(encodedChars.length, maxPerRow) - 1) * gap, glyphCellWidth);
+		const canvasHeight = rowCount * glyphCellHeight + (rowCount - 1) * gap;
 
 		encodedCanvas.width = canvasWidth;
 		encodedCanvas.height = canvasHeight;
@@ -113,26 +117,31 @@
 		context.fillRect(0, 0, encodedCanvas.width, encodedCanvas.height);
 
 		encodedChars.forEach((char, index) => {
+			const row = Math.floor(index / maxPerRow);
+			const col = index % maxPerRow;
+			const x = col * (glyphCellWidth + gap);
+			const y = row * (glyphCellHeight + gap);
+
 			const glyph = glyphs.find((entry) => entry.char.toUpperCase() === char.toUpperCase());
 			if (!glyph) {
-				context.fillStyle = '#111827';
-				context.font = '24px sans-serif';
-				context.fillText(char, index * (glyphCellWidth + gap) + 8, 80);
+				context.fillStyle = '#f9a8d4';
+				context.fillRect(x + 8, y + 8, glyphCellWidth - 16, glyphCellHeight - 16);
 				return;
 			}
 
 			const sourceCanvas = canvasMap.get(glyph.id);
 			if (sourceCanvas) {
-				const padding = 4;
-				const drawWidth = sourceCanvas.width;
-				const drawHeight = sourceCanvas.height;
-				const x = index * (glyphCellWidth + gap) + (glyphCellWidth - drawWidth) / 2 + padding;
-				const y = (glyphCellHeight - drawHeight) / 2;
-				context.drawImage(sourceCanvas, x, y, drawWidth, drawHeight);
+				const drawWidth = 64;
+				const drawHeight = 64;
+				const drawX = x + (glyphCellWidth - drawWidth) / 2;
+				const drawY = y + (glyphCellHeight - drawHeight) / 2;
+				context.drawImage(sourceCanvas, drawX, drawY, drawWidth, drawHeight);
 			} else {
 				context.fillStyle = '#111827';
 				context.font = '24px sans-serif';
-				context.fillText(glyph.char, index * (glyphCellWidth + gap) + 8, 80);
+				context.textAlign = 'center';
+				context.textBaseline = 'middle';
+				context.fillText(glyph.char, x + glyphCellWidth / 2, y + glyphCellHeight / 2);
 			}
 		});
 	};
@@ -207,7 +216,10 @@
 
 <section>
 	<div class="controls">
-		<button type="button" on:click={addGlyph}>Add canvas</button>
+		<button type="button" on:click={addGlyph} aria-label="Add glyph canvas">
+			<Plus size={16} />
+			<span>Add canvas</span>
+		</button>
 		<input bind:value={message} type="text" name="message" id="message" />
 	</div>
 
@@ -232,8 +244,12 @@
 				></canvas>
 
 				<div class="glyph-actions">
-					<button type="button" on:click={() => resetGlyph(glyph.id)}>Reset</button>
-					<button type="button" on:click={() => removeGlyph(glyph.id)}>Remove</button>
+					<button type="button" on:click={() => resetGlyph(glyph.id)} aria-label={`Reset glyph ${glyph.id}`}>
+						<RotateCcw size={14} />
+					</button>
+					<button type="button" on:click={() => removeGlyph(glyph.id)} aria-label={`Remove glyph ${glyph.id}`}>
+						<Trash2 size={14} />
+					</button>
 				</div>
 			</div>
 		{/each}
