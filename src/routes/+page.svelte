@@ -8,8 +8,10 @@
 		<h1>Cipher Creator</h1>
 		<p>Use the following tools to get started making your own cipher story, or browse user created ones!</p>
 	</section>
-
-	<section class="tool-panel">
-        <CustomGlyph />
-	</section>
+    <section>
+        <p>
+            <a href="/create">Create a new cipher</a> or
+            <a href="/browse">Browse user created ciphers</a>
+        </p>
+    </section>
 </main>

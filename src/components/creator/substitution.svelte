@@ -39,9 +39,11 @@
 			.join('');
 	});
 </script>
-
+<div class="cipher">
 <input bind:value={alphabet} type="text" name="alphabet" id="alphabet" />
 <input bind:value={key} type="text" name="key" id="key" />
 
 <input bind:value={message} type="text" name="message" id="message" />
 <span id="cipher-text">{cipherText}</span>
+
+</div>

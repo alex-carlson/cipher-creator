@@ -1,13 +1,21 @@
-$bg: #bebdac;
+$bg: #c7a58e;
 $accent: #d40f0f;
 $text: #05172e;
 
 :root {
 	color-scheme: dark;
-    font-family: "Felipa", serif;
-    font-weight: 400;
-    font-style: normal;
+    font-family: "Crimson Pro", serif;
+      font-optical-sizing: auto;
+      font-weight: 400;
+      font-style: normal;
 	color: $text;
+    font-size: 22px;
+}
+
+h1, h2, h3, h4, h5, h6 {
+    font-family: "Germania One", system-ui;
+      font-weight: 400;
+      font-style: normal;
 }
 
 body {
@@ -32,4 +40,20 @@ body {
     display: flex;
     flex-direction: column;
     gap: 4px;
+}
+
+a {
+    color: $accent;
+}
+
+section {
+    margin: 20px 0;
+    padding: 10px;
+    border: 1px solid $accent;
+    border-radius: 8px;
+    background-color: $bg;
+}
+
+.cipher {
+    margin-top: 20px;
 }

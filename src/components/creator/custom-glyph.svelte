@@ -214,7 +214,7 @@
 	});
 </script>
 
-<section>
+<div class="cipher">
 	<div class="controls">
 		<button type="button" on:click={addGlyph} aria-label="Add glyph canvas">
 			<Plus size={16} />
@@ -261,4 +261,5 @@
 	</div>
 
 	<canvas bind:this={encodedCanvas} aria-label="Encoded glyph canvas"></canvas>
-</section>
+
+</div>
