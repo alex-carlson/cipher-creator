@@ -1,0 +1,35 @@
+$bg: #bebdac;
+$accent: #d40f0f;
+$text: #05172e;
+
+:root {
+	color-scheme: dark;
+    font-family: "Felipa", serif;
+    font-weight: 400;
+    font-style: normal;
+	color: $text;
+}
+
+body {
+	margin: 0;
+    padding: 2em;
+	color: $text;
+    background-image: url('/src/lib/assets/paperbg.jpg');
+}
+
+* {
+    box-sizing: border-box;
+}
+
+.glyph-grid {
+    display: flex;
+    flex-direction: row;
+    gap: 4px;
+    margin: 20px auto;
+}
+
+.glyph-card {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
