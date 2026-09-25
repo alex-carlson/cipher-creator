@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { onMount, tick } from 'svelte';
+	import { createEventDispatcher, onMount, tick } from 'svelte';
 	import { Plus, RotateCcw, Trash2 } from 'lucide-svelte';
 
 	type Glyph = {
@@ -8,6 +8,12 @@
 		dataUrl: string;
 	};
 
+	type CustomGlyphConfig = {
+		message: string;
+		glyphs: Glyph[];
+	};
+
+	const dispatch = createEventDispatcher<{ cipherChange: CustomGlyphConfig }>();
 	const BRUSH_SIZE = 4;
 	let encodedCanvas: HTMLCanvasElement;
 	let message = $state('HELLO');
@@ -201,6 +207,13 @@
 		return [...message.toUpperCase()]
 			.map((char) => substitution.get(char) ?? char)
 			.join('');
+	});
+
+	$effect(() => {
+		dispatch('cipherChange', {
+			message,
+			glyphs
+		});
 	});
 
 	onMount(() => {

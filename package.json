@@ -22,6 +22,8 @@
 		"vite": "^8.0.16"
 	},
 	"dependencies": {
+		"firebase": "^10.14.1",
+		"firebaseui": "^6.1.0",
 		"lucide-svelte": "^1.0.1"
 	}
 }

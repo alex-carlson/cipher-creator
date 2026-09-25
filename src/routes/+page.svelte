@@ -5,8 +5,7 @@
 
 <main class="page">
 	<section class="hero">
-		<h1>Cipher Creator</h1>
-		<p>Use the following tools to get started making your own cipher story, or browse user created ones!</p>
+		<p>Greetings Codebreaker!  Let's make and break some ciphers!</p>
 	</section>
     <section>
         <p>

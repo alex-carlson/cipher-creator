@@ -1,4 +1,14 @@
 <script lang="ts">
+	import { createEventDispatcher } from 'svelte';
+
+	type SubstitutionConfig = {
+		alphabet: string;
+		key: string;
+		message: string;
+		cipherText: string;
+	};
+
+	const dispatch = createEventDispatcher<{ cipherChange: SubstitutionConfig }>();
 	let alphabet = $state('abcdefghijklmnopqrstuvwxyz');
 	let key = $state('key');
 	let message = $state('');
@@ -38,12 +48,20 @@
 			.map((char) => lookup.get(char) ?? char)
 			.join('');
 	});
+
+	$effect(() => {
+		dispatch('cipherChange', {
+			alphabet,
+			key,
+			message,
+			cipherText
+		});
+	});
 </script>
 <div class="cipher">
-<input bind:value={alphabet} type="text" name="alphabet" id="alphabet" />
-<input bind:value={key} type="text" name="key" id="key" />
+	<input bind:value={alphabet} type="text" name="alphabet" id="alphabet" />
+	<input bind:value={key} type="text" name="key" id="key" />
 
-<input bind:value={message} type="text" name="message" id="message" />
-<span id="cipher-text">{cipherText}</span>
-
+	<input bind:value={message} type="text" name="message" id="message" />
+	<span id="cipher-text">{cipherText}</span>
 </div>

@@ -1,6 +1,7 @@
 <script lang="ts">
 	import favicon from '$lib/assets/favicon.svg';
 	import '../app.scss';
+	import Header from '../components/Header.svelte';
 
 	let { children } = $props();
 </script>
@@ -13,4 +14,7 @@
 	<link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,200..900;1,200..900&family=Germania+One&display=swap" rel="stylesheet">
 </svelte:head>
 
-{@render children()}
+<Header />
+<div class="container">
+	{@render children()}
+</div>
