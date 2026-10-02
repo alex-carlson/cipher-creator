@@ -92,28 +92,72 @@
 		renderEncodedCanvas();
 	};
 
+	const encodeMessage = (value: string) => {
+		const chars = [...value];
+		const configuredGlyphs = glyphs
+			.map((glyph) => ({ glyph, symbol: glyph.char.trim() }))
+			.filter(({ symbol }) => symbol.length > 0);
+		const singleCharacterGlyphs = configuredGlyphs.filter(({ symbol }) => [...symbol].length === 1);
+		const multiCharacterGlyphs = configuredGlyphs
+			.filter(({ symbol }) => [...symbol].length > 1)
+			.sort((left, right) => [...right.symbol].length - [...left.symbol].length);
+		const encoded: Array<{ glyph?: Glyph; symbol: string; start: number; end: number }> = [];
+
+		for (let index = 0; index < chars.length;) {
+			const singleMatch = singleCharacterGlyphs.find(
+				({ symbol }) => chars[index].toUpperCase() === symbol.toUpperCase()
+			);
+
+			if (singleMatch) {
+				encoded.push({ glyph: singleMatch.glyph, symbol: singleMatch.symbol, start: index, end: index + 1 });
+				index += 1;
+				continue;
+			}
+
+			const multiMatch = multiCharacterGlyphs.find(({ symbol }) => {
+				const symbolLength = [...symbol].length;
+				return index + 1 >= symbolLength &&
+					chars.slice(index + 1 - symbolLength, index + 1).join('').toUpperCase() === symbol.toUpperCase();
+			});
+			if (multiMatch) {
+				const start = index + 1 - [...multiMatch.symbol].length;
+				while (encoded.length && encoded[encoded.length - 1].end > start) {
+					encoded.pop();
+				}
+				encoded.push({ glyph: multiMatch.glyph, symbol: multiMatch.symbol, start, end: index + 1 });
+				index += 1;
+				continue;
+			}
+
+			const char = chars[index];
+			const alphabetIndex = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.indexOf(char.toUpperCase());
+			const fallbackGlyph = alphabetIndex >= 0 ? glyphs[alphabetIndex] : undefined;
+			const fallbackSymbol = fallbackGlyph?.char.trim();
+			encoded.push({
+				glyph: fallbackSymbol ? fallbackGlyph : undefined,
+				symbol: fallbackSymbol || char,
+				start: index,
+				end: index + 1
+			});
+			index += 1;
+		}
+
+		return encoded;
+	};
+
 	const renderEncodedCanvas = () => {
 		if (!encodedCanvas) return;
 
 		const context = encodedCanvas.getContext('2d');
 		if (!context) return;
 
-		const lookup = new Map<string, string>();
-		const cleanAlphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
-		for (let index = 0; index < cleanAlphabet.length; index += 1) {
-			const plain = cleanAlphabet[index];
-			const glyphMatch = glyphs.find((glyph) => glyph.char.toUpperCase() === plain);
-			const cipher = glyphMatch?.char ?? plain;
-			lookup.set(plain, cipher);
-		}
-
-		const encodedChars = [...message.toUpperCase()].map((char) => lookup.get(char) ?? char);
+		const encodedGlyphs = encodeMessage(message.toUpperCase());
 		const glyphCellWidth = 64;
 		const glyphCellHeight = 64;
 		const gap = 8;
 		const maxPerRow = 12;
-		const rowCount = Math.max(1, Math.ceil(encodedChars.length / maxPerRow));
-		const canvasWidth = Math.max(Math.min(encodedChars.length, maxPerRow) * glyphCellWidth + (Math.min(encodedChars.length, maxPerRow) - 1) * gap, glyphCellWidth);
+		const rowCount = Math.max(1, Math.ceil(encodedGlyphs.length / maxPerRow));
+		const canvasWidth = Math.max(Math.min(encodedGlyphs.length, maxPerRow) * glyphCellWidth + (Math.min(encodedGlyphs.length, maxPerRow) - 1) * gap, glyphCellWidth);
 		const canvasHeight = rowCount * glyphCellHeight + (rowCount - 1) * gap;
 
 		encodedCanvas.width = canvasWidth;
@@ -122,16 +166,18 @@
 		context.fillStyle = '#ffffff';
 		context.fillRect(0, 0, encodedCanvas.width, encodedCanvas.height);
 
-		encodedChars.forEach((char, index) => {
+		encodedGlyphs.forEach(({ glyph, symbol }, index) => {
 			const row = Math.floor(index / maxPerRow);
 			const col = index % maxPerRow;
 			const x = col * (glyphCellWidth + gap);
 			const y = row * (glyphCellHeight + gap);
 
-			const glyph = glyphs.find((entry) => entry.char.toUpperCase() === char.toUpperCase());
 			if (!glyph) {
-				context.fillStyle = '#f9a8d4';
-				context.fillRect(x + 8, y + 8, glyphCellWidth - 16, glyphCellHeight - 16);
+				context.fillStyle = '#111827';
+				context.font = `${Math.min(24, 48 / [...symbol].length)}px sans-serif`;
+				context.textAlign = 'center';
+				context.textBaseline = 'middle';
+				context.fillText(symbol, x + glyphCellWidth / 2, y + glyphCellHeight / 2, glyphCellWidth - 4);
 				return;
 			}
 
@@ -147,7 +193,8 @@
 				context.font = '24px sans-serif';
 				context.textAlign = 'center';
 				context.textBaseline = 'middle';
-				context.fillText(glyph.char, x + glyphCellWidth / 2, y + glyphCellHeight / 2);
+				context.font = `${Math.min(24, 48 / [...symbol].length)}px sans-serif`;
+				context.fillText(symbol, x + glyphCellWidth / 2, y + glyphCellHeight / 2, glyphCellWidth - 4);
 			}
 		});
 	};
@@ -194,19 +241,13 @@
 	};
 
 	const cipherText = $derived.by(() => {
-		const cleanAlphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
-		const glyphChars = glyphs.map((glyph) => glyph.char.trim()).filter(Boolean);
-		const substitution = new Map<string, string>();
-
-		for (let index = 0; index < cleanAlphabet.length; index += 1) {
-			const plain = cleanAlphabet[index];
-			const cipher = glyphChars[index] ?? plain;
-			substitution.set(plain, cipher);
-		}
-
-		return [...message.toUpperCase()]
-			.map((char) => substitution.get(char) ?? char)
+		return encodeMessage(message.toUpperCase())
+			.map(({ symbol }) => symbol)
 			.join('');
+	});
+
+	$effect(() => {
+		renderEncodedCanvas();
 	});
 
 	$effect(() => {
@@ -241,7 +282,7 @@
 			<div class="glyph-card">
 				<label>
 					Character
-					<input bind:value={glyph.char} type="text" maxlength="1" />
+					<input bind:value={glyph.char} type="text" />
 				</label>
 
 				<canvas
