@@ -3,25 +3,30 @@ $accent: #d40f0f;
 $text: #05172e;
 
 :root {
-	color-scheme: dark;
+    color-scheme: dark;
     font-family: "Crimson Pro", serif;
     font-optical-sizing: auto;
     font-weight: 400;
     font-style: normal;
-	color: $text;
+    color: $text;
     font-size: 22px;
 }
 
-h1, h2, h3, h4, h5, h6 {
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
     font-family: "Germania One", system-ui;
-      font-weight: 400;
-      font-style: normal;
+    font-weight: 400;
+    font-style: normal;
 }
 
 body {
-	margin: 0;
+    margin: 0;
     padding: 0;
-	color: $text;
+    color: $text;
     background-image: url('/src/lib/assets/paperbg.jpg');
 }
 
@@ -30,8 +35,8 @@ body {
 }
 
 .glyph-grid {
-    display: flex;
-    flex-direction: row;
+    display: grid;
+    grid-template-columns: repeat(6, minmax(0, 1fr));
     gap: 4px;
     margin: 20px auto;
 }
@@ -40,6 +45,28 @@ body {
     display: flex;
     flex-direction: column;
     gap: 4px;
+    min-width: 0;
+}
+
+.glyph-card canvas {
+    display: block;
+    width: 100%;
+    height: auto;
+    aspect-ratio: 1 / 1;
+    touch-action: none;
+    cursor: crosshair;
+}
+
+@media (max-width: 768px) {
+    .glyph-grid {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 480px) {
+    .glyph-grid {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
 }
 
 a {
