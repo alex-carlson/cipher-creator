@@ -16,7 +16,20 @@
 	const dispatch = createEventDispatcher<{
 		cipherChange: CustomGlyphConfig;
 	}>();
-	const BRUSH_SIZE = 4;
+
+	type BrushShape = "round" | "square";
+
+	let brushSize = $state(4);
+	let brushShape = $state<BrushShape>("round");
+	let brushColor = $state("#111827");
+
+	const BRUSH_SIZES = [
+		{ label: "Fine", value: 2 },
+		{ label: "Medium", value: 4 },
+		{ label: "Thick", value: 8 },
+		{ label: "Bold", value: 14 },
+	];
+
 	let encodedCanvas: HTMLCanvasElement;
 
 	type CustomGlyphProps = {
@@ -37,15 +50,22 @@
 		const context = canvas.getContext("2d");
 		if (!context) return;
 
-		context.lineCap = "round";
-		context.lineJoin = "round";
-		context.lineWidth = BRUSH_SIZE;
-		context.strokeStyle = "#111827";
+		context.lineCap = brushShape === "round" ? "round" : "butt";
+		context.lineJoin = brushShape === "round" ? "round" : "miter";
+		context.lineWidth = brushSize;
+		context.strokeStyle = brushColor;
 		context.fillStyle = "#ffffff";
 		context.fillRect(0, 0, canvas.width, canvas.height);
 
 		contextMap.set(glyphId, context);
 	};
+
+	function fillStyleForSquareBrush(
+		context: CanvasRenderingContext2D,
+		color: string,
+	) {
+		context.fillStyle = color;
+	}
 
 	const registerCanvas = (node: HTMLCanvasElement, glyphId: number) => {
 		canvasMap.set(glyphId, node);
@@ -300,23 +320,33 @@
 		});
 	};
 
+	const drawSquareStamp = (
+		context: CanvasRenderingContext2D,
+		x: number,
+		y: number,
+	) => {
+		const size = brushSize;
+		context.fillStyle = brushColor;
+		context.fillRect(x - size / 2, y - size / 2, size, size);
+	};
+
 	const draw = (event: PointerEvent, id: number) => {
 		const context = contextMap.get(id);
-		if (!context || !drawingMap.get(id)) return;
-
 		const canvas = canvasMap.get(id);
-		if (!canvas) return;
+		if (!context || !canvas || !drawingMap.get(id)) return;
 
 		const rect = canvas.getBoundingClientRect();
 		const x = ((event.clientX - rect.left) / rect.width) * canvas.width;
 		const y = ((event.clientY - rect.top) / rect.height) * canvas.height;
 
-		context.lineTo(x, y);
-		context.stroke();
-
-		// Continue the current stroke without rebuilding reactive state.
-		context.beginPath();
-		context.moveTo(x, y);
+		if (brushShape === "square") {
+			drawSquareStamp(context, x, y);
+		} else {
+			context.lineTo(x, y);
+			context.stroke();
+			context.beginPath();
+			context.moveTo(x, y);
+		}
 	};
 
 	const startDrawing = (event: PointerEvent, id: number) => {
@@ -324,7 +354,6 @@
 		const canvas = canvasMap.get(id);
 		if (!context || !canvas) return;
 
-		// Keep receiving pointer events if the cursor leaves the canvas.
 		canvas.setPointerCapture(event.pointerId);
 		drawingMap.set(id, true);
 
@@ -334,6 +363,16 @@
 
 		context.beginPath();
 		context.moveTo(x, y);
+
+		// Draw immediately, even for a single click.
+		if (brushShape === "square") {
+			drawSquareStamp(context, x, y);
+		} else {
+			context.lineTo(x, y);
+			context.stroke();
+			context.beginPath();
+			context.moveTo(x, y);
+		}
 	};
 
 	const stopDrawing = (id: number) => {
@@ -367,6 +406,20 @@
 		});
 	});
 
+	$effect(() => {
+		const size = brushSize;
+		const shape = brushShape;
+		const color = brushColor;
+
+		for (const context of contextMap.values()) {
+			context.lineWidth = size;
+			context.lineCap = shape === "round" ? "round" : "butt";
+			context.lineJoin = shape === "round" ? "round" : "miter";
+			context.strokeStyle = color;
+			context.fillStyle = color;
+		}
+	});
+
 	onMount(() => {
 		for (const glyph of glyphs) {
 			const canvas = canvasMap.get(glyph.id);
@@ -381,6 +434,51 @@
 <div class="cipher">
 	<div class="controls">
 		<input bind:value={message} type="text" name="message" id="message" />
+	</div>
+
+	<div class="brush-controls">
+		<label>
+			Brush shape
+			<select bind:value={brushShape}>
+				<option value="round">Round pen</option>
+				<option value="square">Square pen</option>
+			</select>
+		</label>
+
+		<label>
+			Brush size
+
+			<select bind:value={brushSize}>
+				{#each BRUSH_SIZES as size}
+					<option value={size.value}>
+						{size.label} ({size.value}px)
+					</option>
+				{/each}
+			</select>
+		</label>
+
+		<label class="color-control">
+			Brush color
+			<div class="color-picker">
+				<input
+					type="color"
+					bind:value={brushColor}
+					aria-label="Choose brush color"
+				/>
+				<span>{brushColor.toUpperCase()}</span>
+			</div>
+		</label>
+
+		<div class="brush-preview">
+			<span>Preview</span>
+			<div
+				class="brush-dot"
+				class:round={brushShape === "round"}
+				style:background-color={brushColor}
+				style:width={`${brushSize * 2}px`}
+				style:height={`${brushSize * 2}px`}
+			></div>
+		</div>
 	</div>
 
 	<div class="glyph-grid">
@@ -431,3 +529,66 @@
 	<canvas bind:this={encodedCanvas} aria-label="Encoded glyph canvas"
 	></canvas>
 </div>
+
+<style>
+	.brush-controls {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: end;
+		gap: 1rem;
+		margin-bottom: 1rem;
+	}
+
+	.brush-controls label {
+		display: flex;
+		flex-direction: column;
+		gap: 0.35rem;
+		font-size: 0.875rem;
+	}
+
+	.brush-controls select {
+		padding: 0.5rem;
+		border: 1px solid #d1d5db;
+		border-radius: 0.375rem;
+		background: white;
+		color: #111827;
+	}
+
+	.brush-preview {
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
+		font-size: 0.875rem;
+	}
+
+	.brush-dot {
+		background: #111827;
+		flex-shrink: 0;
+	}
+
+	.brush-dot.round {
+		border-radius: 50%;
+	}
+
+	.color-picker {
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
+		min-height: 38px;
+	}
+
+	.color-picker input[type="color"] {
+		width: 42px;
+		height: 38px;
+		padding: 3px;
+		border: 1px solid #d1d5db;
+		border-radius: 6px;
+		background: white;
+		cursor: pointer;
+	}
+
+	.color-picker span {
+		font-family: monospace;
+		font-size: 0.875rem;
+	}
+</style>
