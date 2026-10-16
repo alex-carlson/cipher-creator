@@ -11,6 +11,12 @@
 	];
 
 	const isActive = (href: string) => page.url.pathname === href;
+
+	// mobile toggle
+	const toggleMobileNav = () => {
+		const nav = document.querySelector(".site-nav");
+		nav?.classList.toggle("open");
+	};
 </script>
 
 <header class="site-header">
@@ -23,6 +29,9 @@
 			/>
 			<h1>codebreaker</h1>
 		</a>
+		<button class="mobile-toggle" aria-label="Toggle navigation" on:click={toggleMobileNav}>
+			☰
+		</button>
 	</div>
 
 	<nav class="site-nav" aria-label="Main navigation">
@@ -35,7 +44,7 @@
 		<button
 			type="button"
 			class="login-button"
-			onclick={() => (showAuthModal = true)}
+			on:click={() => (showAuthModal = true)}
 		>
 			Login
 		</button>

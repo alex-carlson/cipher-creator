@@ -159,6 +159,14 @@ a {
     flex-wrap: wrap;
 }
 
+.mobile-toggle {
+    display: block;
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    cursor: pointer;
+}
+
 .site-nav a,
 .site-nav button,
 .login-button {
@@ -350,5 +358,40 @@ select {
 @media (max-width: 600px) {
     .cipher-list {
         grid-template-columns: 1fr;
+    }
+}
+
+// mobile nav
+@media (max-width: 600px) {
+    .site-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .mobile-toggle {
+        display: block;
+        background: none;
+        border: none;
+        font-size: 1.5rem;
+        cursor: pointer;
+        color: white;
+        float: right;
+    }
+
+    .site-nav {
+        width: 100%;
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+        overflow-x: auto;
+        display: none;
+    }
+
+    .site-nav a {
+        white-space: nowrap;
+    }
+
+    .site-nav.open {
+        display: flex;
     }
 }
