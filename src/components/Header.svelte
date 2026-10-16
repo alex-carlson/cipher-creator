@@ -21,6 +21,7 @@
 				alt="Codebreaker Logo"
 				height="80"
 			/>
+			<h1>codebreaker</h1>
 		</a>
 	</div>
 
