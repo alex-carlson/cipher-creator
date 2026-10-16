@@ -1,7 +1,9 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
-	import { collection, getDocs, orderBy, query } from 'firebase/firestore';
-	import { db, firebaseReady } from '$lib/firebase';
+	import { onMount } from "svelte";
+	import { collection, getDocs, orderBy, query } from "firebase/firestore";
+	import { db, firebaseReady } from "$lib/firebase";
+	import { getCipherComplexity } from "$lib/cipher-parser";
+	import { formatRelativeDate } from "$lib/formatting";
 
 	type CipherRecord = {
 		id: string;
@@ -19,32 +21,34 @@
 
 	let ciphers = $state<CipherRecord[]>([]);
 	let loading = $state(true);
-	let errorMessage = $state('');
+	let errorMessage = $state("");
 
-	const formatDate = (value?: CipherRecord['createdAt']) => {
-		if (!value) return 'Recently';
-		if (typeof value.toDate === 'function') {
+	const formatDate = (value?: CipherRecord["createdAt"]) => {
+		if (!value) return "Recently";
+		if (typeof value.toDate === "function") {
 			return value.toDate().toLocaleString();
 		}
-		return 'Recently';
+		return "Recently";
 	};
 
 	onMount(async () => {
 		if (!firebaseReady || !db) {
-			errorMessage = 'Firebase is not configured yet.';
+			errorMessage = "Firebase is not configured yet.";
 			loading = false;
 			return;
 		}
 
 		try {
-			const snapshot = await getDocs(query(collection(db, 'ciphers'), orderBy('createdAt', 'desc')));
+			const snapshot = await getDocs(
+				query(collection(db, "ciphers"), orderBy("createdAt", "desc")),
+			);
 			ciphers = snapshot.docs.map((doc) => ({
 				id: doc.id,
-				...(doc.data() as Omit<CipherRecord, 'id'>)
+				...(doc.data() as Omit<CipherRecord, "id">),
 			}));
 		} catch (loadError) {
-			console.error('Failed to load ciphers', loadError);
-			errorMessage = 'Unable to load ciphers right now.';
+			console.error("Failed to load ciphers", loadError);
+			errorMessage = "Unable to load ciphers right now.";
 		} finally {
 			loading = false;
 		}
@@ -69,14 +73,16 @@
 			{#each ciphers as cipher (cipher.id)}
 				<li class="cipher-card">
 					<h2>
-						<a href={`/${cipher.id}`}>{cipher.name || 'Untitled cipher'}</a>
+						<a href={`/${cipher.id}`}
+							>{cipher.name || "Untitled cipher"}</a
+						>
 					</h2>
-					<p class="meta">Created: {formatDate(cipher.createdAt)}</p>
-					{#if cipher.codes?.length}
-						<p class="tools">Tools: {cipher.codes.map((code) => code.type ?? 'code').join(', ')}</p>
-					{:else if cipher.tools?.length}
-						<p class="tools">Tools: {cipher.tools.join(', ')}</p>
-					{/if}
+					<p class="meta">
+						Created: {formatRelativeDate(cipher.createdAt)}
+					</p>
+					<p class="complexity">
+						Complexity: {getCipherComplexity(cipher)}
+					</p>
 				</li>
 			{/each}
 		</ul>

@@ -1,6 +1,8 @@
-$bg: #c7a58e;
-$accent: #d40f0f;
-$text: #05172e;
+$bg: #2f3436;
+$accent: #dba359;
+$text: #b7c4d4;
+$navText: #ffffff;
+$border-radius: 15px;
 
 :root {
     color-scheme: dark;
@@ -23,15 +25,25 @@ h6 {
     font-style: normal;
 }
 
+html,
+body {
+    min-height: 100%;
+    margin: 0;
+}
+
+main {
+    flex: 1;
+}
+
 body {
     margin: 0;
     padding: 0;
     color: $text;
-    background-image: url('/src/lib/assets/paperbg.jpg');
-}
-
-* {
-    box-sizing: border-box;
+    background: $bg;
+    // background-image: url('/src/lib/assets/paperbg.jpg');
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
 }
 
 .glyph-grid {
@@ -44,8 +56,15 @@ body {
 .glyph-card {
     display: flex;
     flex-direction: column;
-    gap: 4px;
+    gap: 20px;
     min-width: 0;
+}
+
+.glyph-card .glyph-char {
+    width: 100%;
+    box-sizing: border-box;
+    text-align: center;
+    font-size: 1.5rem;
 }
 
 .glyph-card canvas {
@@ -55,6 +74,14 @@ body {
     aspect-ratio: 1 / 1;
     touch-action: none;
     cursor: crosshair;
+    border: solid 2px $accent;
+    border-radius: $border-radius;
+}
+
+.glyph-card .glyph-actions {
+    display: flex;
+    gap: 0.5rem;
+    justify-content: center;
 }
 
 @media (max-width: 768px) {
@@ -82,38 +109,71 @@ a {
     align-items: center;
     justify-content: space-between;
     gap: 1rem;
-    padding: 1rem 0.5em;
+    padding: 0.25rem 0.5em;
     margin-bottom: 1.5rem;
     border-bottom: 2px solid rgba($accent, 0.75);
-    background: rgba(255, 255, 255, 0.12);
+    background: rgba(0, 0, 0, 0.39);
     backdrop-filter: blur(6px);
 }
 
+.brand-wrap {
+    display: flex;
+    align-items: center;
+    flex-shrink: 0;
+}
+
 .brand {
-    font-family: "Germania One", system-ui;
-    font-size: 2rem;
-    letter-spacing: 0.04em;
-    color: $text;
+    display: flex;
+    align-items: center;
+    line-height: 1;
     text-decoration: none;
+}
+
+.brand img {
+    display: block;
+    height: 60px;
+    width: auto;
 }
 
 .site-nav {
     display: flex;
+    align-items: center;
     gap: 1rem;
     flex-wrap: wrap;
 }
 
-.site-nav a {
+.site-nav a,
+.site-nav button,
+.login-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1.2;
     text-decoration: none;
     font-weight: 600;
     padding: 0.4rem 0.75rem;
     border-radius: 999px;
-    transition: background-color 0.2s ease;
 }
 
 .site-nav a.active,
-.site-nav a:hover {
-    background: rgba($accent, 0.12);
+.site-nav a:hover,
+.login-button:hover {
+    background: rgba($accent, 1);
+    color: $navText;
+}
+
+.site-nav .login-button {
+    background: transparent;
+    border: none;
+    color: $accent;
+    cursor: pointer;
+}
+
+.site-nav .login-button:hover,
+.site-nav .login-button:focus,
+.login-button:focus {
+    background: $accent;
+    color: $navText;
 }
 
 .auth-card {
@@ -140,7 +200,7 @@ a {
 
 .auth-form input {
     padding: 0.7rem 0.8rem;
-    border-radius: 8px;
+    border-radius: $border-radius;
     border: 1px solid rgba($text, 0.35);
     font: inherit;
     background: rgba(255, 255, 255, 0.65);
@@ -167,11 +227,111 @@ a {
 section {
     margin: 20px 0;
     padding: 10px;
-    border: 1px solid $accent;
-    border-radius: 8px;
-    background-color: $bg;
+    border-radius: $border-radius;
+    background-color: color-mix(in srgb, $bg 80%, black 10%);
 }
 
 .cipher {
     margin-top: 20px;
+}
+
+input[type="text"],
+input[type="password"],
+input[type="email"] {
+    padding: 0.7rem 0.8rem;
+    border-radius: $border-radius;
+    border: 3px solid rgba($text, 0.35);
+    font: inherit;
+    background: rgba(255, 255, 255, 0.65);
+    color: black;
+}
+
+input[type="text"]:focus,
+input[type="password"]:focus,
+input[type="email"]:focus {
+    outline: none;
+    border-color: $accent;
+    box-shadow: 0 0 0 2px rgba($accent, 0.25);
+}
+
+input[type="submit"],
+button {
+    padding: 0.7rem 0.8rem;
+    border-radius: $border-radius;
+    border: 3px solid rgba($text, 0.35);
+    font: inherit;
+    background: rgba(255, 255, 255, 0.65);
+    color: black;
+    transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+input[type="submit"]:hover,
+button:hover {
+    background: rgba(255, 255, 255, 0.85);
+    color: black;
+}
+
+input[type="submit"]:focus,
+button:focus {
+    outline: none;
+    border-color: $accent;
+    box-shadow: 0 0 0 2px rgba($accent, 0.25);
+}
+
+input[type="submit"]:active,
+button:active {
+    background: rgba(255, 255, 255, 0.75);
+    color: black;
+}
+
+option {
+    background: rgba(255, 255, 255, 0.65);
+    color: black;
+}
+
+select {
+    padding: 0.7rem 0.8rem;
+    border-radius: $border-radius;
+    border: 3px solid rgba($text, 0.35);
+    font: inherit;
+    background: rgba(255, 255, 255, 0.65);
+    color: black;
+}
+
+.cipher-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 1rem;
+    width: 100%;
+}
+
+.cipher-card {
+    border: 1px solid $accent;
+    border-radius: $border-radius;
+    padding: 1rem;
+    background: rgba(255, 255, 255, 0.08);
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    min-width: 0;
+    overflow-wrap: anywhere;
+}
+
+.cipher-card>* {
+    margin: 0;
+}
+
+@media (max-width: 1024px) {
+    .cipher-list {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 600px) {
+    .cipher-list {
+        grid-template-columns: 1fr;
+    }
 }

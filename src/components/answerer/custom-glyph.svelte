@@ -321,7 +321,7 @@
 		background: #fffdf5;
 		border: 2px solid #b8bec9;
 		border-bottom: 3px solid #8b95a5;
-		border-radius: 8px;
+		border-radius: $border-radius;
 		outline: none;
 		box-shadow: 0 2px 3px rgb(0 0 0 / 5%);
 

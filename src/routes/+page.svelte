@@ -1,16 +1,13 @@
 <script lang="ts">
-	import Substitution from '../components/creator/substitution.svelte';
-    import CustomGlyph from '../components/creator/custom-glyph.svelte';
+    import Latest from "../components/Latest.svelte";
 </script>
 
 <main class="page">
-	<section class="hero">
-		<p>Greetings Codebreaker!  Let's make and break some ciphers!</p>
-	</section>
-    <section>
+    <section class="hero">
+        <p>Greetings Codebreaker! Here's the latest transmissions</p>
+        <Latest />
         <p>
-            <a href="/create">Create a new cipher</a> or
-            <a href="/browse">Browse user created ciphers</a>
+            Or you can <a href="/browse">browse all</a>
         </p>
     </section>
 </main>

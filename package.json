@@ -16,6 +16,7 @@
 		"@sveltejs/adapter-cloudflare": "7.2.9",
 		"@sveltejs/kit": "^2.63.0",
 		"@sveltejs/vite-plugin-svelte": "^7.1.2",
+		"@types/canvas-confetti": "^1.9.0",
 		"sass": "^1.104.1",
 		"svelte": "^5.56.1",
 		"svelte-check": "^4.6.0",
@@ -24,6 +25,7 @@
 		"wrangler": "^4.151.0"
 	},
 	"dependencies": {
+		"canvas-confetti": "^1.9.4",
 		"firebase": "^10.14.1",
 		"firebaseui": "^6.1.0",
 		"lucide-svelte": "^1.0.1"

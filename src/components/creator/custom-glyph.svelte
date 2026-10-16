@@ -21,7 +21,7 @@
 
 	let brushSize = $state(4);
 	let brushShape = $state<BrushShape>("round");
-	let brushColor = $state("#111827");
+	let brushColor = $state("#CFD8EB");
 
 	const BRUSH_SIZES = [
 		{ label: "Fine", value: 2 },
@@ -50,12 +50,13 @@
 		const context = canvas.getContext("2d");
 		if (!context) return;
 
+		context.clearRect(0, 0, canvas.width, canvas.height);
+
 		context.lineCap = brushShape === "round" ? "round" : "butt";
 		context.lineJoin = brushShape === "round" ? "round" : "miter";
 		context.lineWidth = brushSize;
 		context.strokeStyle = brushColor;
-		context.fillStyle = "#ffffff";
-		context.fillRect(0, 0, canvas.width, canvas.height);
+		context.fillStyle = brushColor;
 
 		contextMap.set(glyphId, context);
 	};
@@ -268,8 +269,6 @@
 		encodedCanvas.width = canvasWidth;
 		encodedCanvas.height = canvasHeight;
 		context.clearRect(0, 0, encodedCanvas.width, encodedCanvas.height);
-		context.fillStyle = "#ffffff";
-		context.fillRect(0, 0, encodedCanvas.width, encodedCanvas.height);
 
 		encodedGlyphs.forEach(({ glyph, symbol }, index) => {
 			const row = Math.floor(index / maxPerRow);
@@ -433,104 +432,133 @@
 
 <div class="cipher">
 	<div class="controls">
-		<input bind:value={message} type="text" name="message" id="message" />
+		<label for="message">Enter your message</label>
+		<textarea bind:value={message} name="message" id="message" rows="4"
+		></textarea>
 	</div>
 
-	<div class="brush-controls">
-		<label>
-			Brush shape
-			<select bind:value={brushShape}>
-				<option value="round">Round pen</option>
-				<option value="square">Square pen</option>
-			</select>
-		</label>
+	{#if message === ""}
+		<p class="empty-message">
+			Please enter a message to start creating your cipher.
+		</p>
+	{/if}
 
-		<label>
-			Brush size
+	{#if message !== ""}
+		<div class="brush-controls">
+			<label>
+				Brush shape
+				<select bind:value={brushShape}>
+					<option value="round">Round pen</option>
+					<option value="square">Square pen</option>
+				</select>
+			</label>
 
-			<select bind:value={brushSize}>
-				{#each BRUSH_SIZES as size}
-					<option value={size.value}>
-						{size.label} ({size.value}px)
-					</option>
-				{/each}
-			</select>
-		</label>
+			<label>
+				Brush size
 
-		<label class="color-control">
-			Brush color
-			<div class="color-picker">
-				<input
-					type="color"
-					bind:value={brushColor}
-					aria-label="Choose brush color"
-				/>
-				<span>{brushColor.toUpperCase()}</span>
+				<select bind:value={brushSize}>
+					{#each BRUSH_SIZES as size}
+						<option value={size.value}>
+							{size.label} ({size.value}px)
+						</option>
+					{/each}
+				</select>
+			</label>
+
+			<label class="color-control">
+				Brush color
+				<div class="color-picker">
+					<input
+						type="color"
+						bind:value={brushColor}
+						aria-label="Choose brush color"
+					/>
+					<span>{brushColor.toUpperCase()}</span>
+				</div>
+			</label>
+
+			<div class="brush-preview">
+				<span>Preview</span>
+				<div
+					class="brush-dot"
+					class:round={brushShape === "round"}
+					style:background-color={brushColor}
+					style:width={`${brushSize * 2}px`}
+					style:height={`${brushSize * 2}px`}
+				></div>
 			</div>
-		</label>
-
-		<div class="brush-preview">
-			<span>Preview</span>
-			<div
-				class="brush-dot"
-				class:round={brushShape === "round"}
-				style:background-color={brushColor}
-				style:width={`${brushSize * 2}px`}
-				style:height={`${brushSize * 2}px`}
-			></div>
 		</div>
-	</div>
 
-	<div class="glyph-grid">
-		{#each glyphs as glyph (glyph.id)}
-			<div class="glyph-card">
-				<label>
-					Character
-					<input bind:value={glyph.char} type="text" />
-				</label>
+		<div class="glyph-grid">
+			{#each glyphs as glyph (glyph.id)}
+				<div class="glyph-card">
+					<span class="glyph-char">{glyph.char}</span>
 
-				<canvas
-					data-glyph-id={glyph.id}
-					width="128"
-					height="128"
-					use:registerCanvas={glyph.id}
-					on:pointerdown={(event) => startDrawing(event, glyph.id)}
-					on:pointermove={(event) => draw(event, glyph.id)}
-					on:pointerup={() => stopDrawing(glyph.id)}
-					on:pointerleave={() => stopDrawing(glyph.id)}
-					on:pointercancel={() => stopDrawing(glyph.id)}
-				></canvas>
+					<canvas
+						data-glyph-id={glyph.id}
+						width="128"
+						height="128"
+						use:registerCanvas={glyph.id}
+						on:pointerdown={(event) =>
+							startDrawing(event, glyph.id)}
+						on:pointermove={(event) => draw(event, glyph.id)}
+						on:pointerup={() => stopDrawing(glyph.id)}
+						on:pointerleave={() => stopDrawing(glyph.id)}
+						on:pointercancel={() => stopDrawing(glyph.id)}
+					></canvas>
 
-				<div class="glyph-actions">
-					<button
-						type="button"
-						on:click={() => resetGlyph(glyph.id)}
-						aria-label={`Reset glyph ${glyph.id}`}
-					>
-						<RotateCcw size={14} />
-					</button>
-					<button
+					<div class="glyph-actions">
+						<button
+							type="button"
+							on:click={() => resetGlyph(glyph.id)}
+							aria-label={`Reset glyph ${glyph.id}`}
+						>
+							<RotateCcw size={14} />
+							Clear
+						</button>
+						<!-- <button
 						type="button"
 						on:click={() => removeGlyph(glyph.id)}
 						aria-label={`Remove glyph ${glyph.id}`}
 					>
 						<Trash2 size={14} />
-					</button>
+					</button> -->
+					</div>
 				</div>
-			</div>
-		{/each}
-	</div>
+			{/each}
+		</div>
 
-	<div class="output">
-		<strong>Cipher text:</strong>
-		<span>{cipherText}</span>
-	</div>
+		<div class="output">
+			<strong>Cipher text:</strong>
+			<span>{cipherText}</span>
+		</div>
+	{/if}
 
 	<canvas bind:this={encodedCanvas} aria-label="Encoded glyph canvas"
 	></canvas>
 </div>
 
 <style>
+	.controls {
+		padding: 1rem;
+	}
+
+	.controls label {
+		display: block;
+		margin-bottom: 0.5rem;
+		font-weight: 600;
+	}
+
+	.controls textarea {
+		width: 100%;
+		padding: 0.5rem;
+		border: 1px solid #d1d5db;
+		border-radius: 0.375rem;
+		font: inherit;
+		resize: vertical;
+		box-sizing: border-box;
+		min-height: 100px;
+	}
 	.brush-controls {
 		display: flex;
 		flex-wrap: wrap;

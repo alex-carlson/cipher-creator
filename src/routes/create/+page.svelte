@@ -2,9 +2,10 @@
     import { addDoc, collection, serverTimestamp } from "firebase/firestore";
     import Substitution from "../../components/creator/substitution.svelte";
     import CustomGlyph from "../../components/creator/custom-glyph.svelte";
+    import Morse from "../../components/creator/morse.svelte";
     import { db, firebaseReady } from "$lib/firebase";
 
-    type ToolType = "custom-glyph" | "substitution";
+    type ToolType = "custom-glyph" | "substitution" | "morse";
     type SubstitutionConfig = {
         alphabet: string;
         key: string;
@@ -26,6 +27,11 @@
         id: string;
         type: "custom-glyph";
         data: CustomGlyphConfig;
+    };
+
+    type MorseConfig = {
+        message: string;
+        cipherText: string;
     };
 
     type ToolCode = SubstitutionToolCode | CustomGlyphToolCode;
@@ -113,6 +119,10 @@
         });
     };
 
+    const handleMorseChange = (event: CustomEvent<MorseConfig>, id: string) => {
+        updateCode(id, event.detail);
+    };
+
     const saveCipher = async () => {
         const trimmedName = cipherName.trim();
 
@@ -190,7 +200,7 @@
                             ? "Custom Glyph"
                             : "Substitution"}
                     </strong>
-                    <span>Tool {index + 1} of {codes.length}</span>
+                    <span>Cipher {index + 1} of {codes.length}</span>
                 </div>
 
                 <div class="tool-actions">
@@ -238,6 +248,11 @@
                     on:cipherChange={(event) =>
                         handleSubstitutionChange(event, code.id)}
                 />
+            {:else if code.type === "morse"}
+                <Morse
+                    on:cipherChange={(event) =>
+                        handleMorseChange(event, code.id)}
+                />
             {/if}
         </section>
     {/each}
@@ -252,6 +267,7 @@
             <option value="">Select a cipher</option>
             <option value="custom-glyph">Custom Glyph</option>
             <option value="substitution">Substitution</option>
+            <option value="morse">Morse</option>
         </select>
     </section>
 
