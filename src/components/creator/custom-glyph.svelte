@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { createEventDispatcher, onMount, tick, untrack } from "svelte";
-	import { Plus, RotateCcw, Trash2 } from "lucide-svelte";
+	import { RotateCcw } from "lucide-svelte";
 
 	type Glyph = {
 		id: number;
@@ -22,6 +22,7 @@
 	let brushSize = $state(4);
 	let brushShape = $state<BrushShape>("round");
 	let brushColor = $state("#CFD8EB");
+	let canvasDisplaySize = $state(128);
 
 	const BRUSH_SIZES = [
 		{ label: "Fine", value: 2 },
@@ -487,6 +488,18 @@
 					style:height={`${brushSize * 2}px`}
 				></div>
 			</div>
+
+			<label class="canvas-size-control">
+				Canvas size
+				<input
+					type="range"
+					min="80"
+					max="256"
+					step="16"
+					bind:value={canvasDisplaySize}
+				/>
+				<span>{canvasDisplaySize}px</span>
+			</label>
 		</div>
 
 		<div class="glyph-grid">
@@ -498,6 +511,7 @@
 						data-glyph-id={glyph.id}
 						width="128"
 						height="128"
+						style={`--glyph-display-size: ${canvasDisplaySize}px`}
 						use:registerCanvas={glyph.id}
 						on:pointerdown={(event) =>
 							startDrawing(event, glyph.id)}

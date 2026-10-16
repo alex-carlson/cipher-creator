@@ -69,13 +69,24 @@ body {
 
 .glyph-card canvas {
     display: block;
-    width: 100%;
+    width: min(100%, var(--glyph-display-size, 128px));
     height: auto;
     aspect-ratio: 1 / 1;
     touch-action: none;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    background: transparent;
     cursor: crosshair;
-    border: solid 2px $accent;
-    border-radius: $border-radius;
+}
+
+.canvas-size-control input[type="range"] {
+    width: 140px;
+    accent-color: #2563eb;
+}
+
+.canvas-size-control span {
+    font-size: 0.875rem;
+    font-family: monospace;
 }
 
 .glyph-card .glyph-actions {
