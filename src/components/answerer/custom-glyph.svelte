@@ -5,11 +5,7 @@
 		const render = () => {
 			const context = canvas.getContext("2d");
 			if (!context) return;
-
-			context.clearRect(0, 0, canvas.width, canvas.height);
-			context.fillStyle = "#fff";
-			context.fillRect(0, 0, canvas.width, canvas.height);
-
+			
 			if (image?.complete && image.naturalWidth > 0) {
 				context.drawImage(image, 0, 0, canvas.width, canvas.height);
 			}
@@ -298,9 +294,6 @@
 		display: block;
 		width: calc(64px * var(--glyph-scale));
 		height: calc(64px * var(--glyph-scale));
-		background: #fff;
-		border: 1px solid #ccc;
-		border-radius: 0.25rem;
 		object-fit: contain;
 	}
 
