@@ -27,7 +27,7 @@
 				alt="Codebreaker Logo"
 				height="80"
 			/>
-			<h1>codebreaker</h1>
+			<h1>ctrl alt decode</h1>
 		</a>
 		<button class="mobile-toggle" aria-label="Toggle navigation" on:click={toggleMobileNav}>
 			☰
