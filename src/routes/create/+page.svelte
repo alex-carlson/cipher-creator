@@ -3,9 +3,10 @@
     import Substitution from "../../components/creator/substitution.svelte";
     import CustomGlyph from "../../components/creator/custom-glyph.svelte";
     import Morse from "../../components/creator/morse.svelte";
+    import Polybius from "../../components/creator/polybius.svelte";
     import { db, firebaseReady } from "$lib/firebase";
 
-    type ToolType = "custom-glyph" | "substitution" | "morse";
+    type ToolType = "custom-glyph" | "substitution" | "morse" | "polybius";
     type SubstitutionConfig = {
         alphabet: string;
         key: string;
@@ -23,6 +24,12 @@
         data: SubstitutionConfig;
     };
 
+    type PolybiusToolCode = {
+        id: string;
+        type: "polybius";
+        data: SubstitutionConfig;
+    };
+
     type CustomGlyphToolCode = {
         id: string;
         type: "custom-glyph";
@@ -34,7 +41,13 @@
         cipherText: string;
     };
 
-    type ToolCode = SubstitutionToolCode | CustomGlyphToolCode;
+    type MorseToolCode = {
+        id: string;
+        type: "morse";
+        data: MorseConfig;
+    };
+
+    type ToolCode = SubstitutionToolCode | CustomGlyphToolCode | PolybiusToolCode | MorseToolCode;
 
     const makeSubstitutionConfig = (): SubstitutionConfig => ({
         alphabet: "abcdefghijklmnopqrstuvwxyz",
@@ -43,9 +56,21 @@
         cipherText: "",
     });
 
+    const makePolybiusConfig = (): SubstitutionConfig => ({
+        alphabet: "abcdefghiklmnopqrstuvwxyz",
+        key: "keyword",
+        message: "",
+        cipherText: "",
+    });
+
     const makeCustomGlyphConfig = (): CustomGlyphConfig => ({
         message: "",
         glyphs: [],
+    });
+
+    const makeMorseConfig = (): MorseConfig => ({
+        message: "",
+        cipherText: "",
     });
 
     let selectedTool = $state<ToolType | "">("");
@@ -57,16 +82,24 @@
     const appendSelectedTool = () => {
         if (!selectedTool) return;
 
+        let initialData;
+        if (selectedTool === "substitution") {
+            initialData = makeSubstitutionConfig();
+        } else if (selectedTool === "polybius") {
+            initialData = makePolybiusConfig();
+        } else if (selectedTool === "morse") {
+            initialData = makeMorseConfig();
+        } else {
+            initialData = makeCustomGlyphConfig();
+        }
+
         codes = [
             ...codes,
             {
                 id: `${selectedTool}-${Date.now()}-${Math.random().toString(16).slice(2)}`,
                 type: selectedTool,
-                data:
-                    selectedTool === "substitution"
-                        ? makeSubstitutionConfig()
-                        : makeCustomGlyphConfig(),
-            },
+                data: initialData,
+            } as ToolCode,
         ];
 
         selectedTool = "";
@@ -74,10 +107,10 @@
 
     const updateCode = (
         id: string,
-        value: SubstitutionConfig | CustomGlyphConfig,
+        value: SubstitutionConfig | CustomGlyphConfig | MorseConfig,
     ) => {
         codes = codes.map((code) =>
-            code.id === id ? { ...code, data: value } : code,
+            code.id === id ? ({ ...code, data: value } as ToolCode) : code,
         );
     };
 
@@ -103,23 +136,23 @@
     };
 
     const handleSubstitutionChange = (
-        event: CustomEvent<SubstitutionConfig>,
+        event: any,
         id: string,
     ) => {
         updateCode(id, event.detail);
     };
 
     const handleCustomGlyphChange = (
-        event: CustomEvent<CustomGlyphConfig>,
+        event: any,
         id: string,
     ) => {
         updateCode(id, {
             message: event.detail.message,
-            glyphs: event.detail.glyphs.map((glyph) => ({ ...glyph })),
+            glyphs: event.detail.glyphs.map((glyph: any) => ({ ...glyph })),
         });
     };
 
-    const handleMorseChange = (event: CustomEvent<MorseConfig>, id: string) => {
+    const handleMorseChange = (event: any, id: string) => {
         updateCode(id, event.detail);
     };
 
@@ -196,9 +229,15 @@
             <div class="tool-toolbar">
                 <div class="tool-heading">
                     <strong>
-                        {code.type === "custom-glyph"
-                            ? "Custom Glyph"
-                            : "Substitution"}
+                        {#if code.type === "custom-glyph"}
+                            Custom Glyph
+                        {:else if code.type === "substitution"}
+                            Substitution
+                        {:else if code.type === "morse"}
+                            Morse Code
+                        {:else if code.type === "polybius"}
+                            Polybius Square
+                        {/if}
                     </strong>
                     <span>Cipher {index + 1} of {codes.length}</span>
                 </div>
@@ -253,6 +292,12 @@
                     on:cipherChange={(event) =>
                         handleMorseChange(event, code.id)}
                 />
+            {:else if code.type === "polybius"}
+                <Polybius
+                    codeId={code.id}
+                    onCipherChange={(event) =>
+                        handleSubstitutionChange(event, code.id)}
+                />
             {/if}
         </section>
     {/each}
@@ -264,88 +309,21 @@
             bind:value={selectedTool}
             onchange={appendSelectedTool}
         >
-            <option value="">Select a cipher</option>
-            <option value="custom-glyph">Custom Glyph</option>
+            <option value="">-- Choose a tool --</option>
             <option value="substitution">Substitution</option>
-            <option value="morse">Morse</option>
+            <option value="custom-glyph">Custom Glyph</option>
+            <option value="morse">Morse Code</option>
+            <option value="polybius">Polybius Square</option>
         </select>
     </section>
 
-    <section>
-        <button
-            type="button"
-            onclick={saveCipher}
-            disabled={saveState === "saving"}
-        >
-            {saveState === "saving" ? "Saving..." : "Save"}
-        </button>
-        {#if saveMessage}
-            <p
-                class:success={saveState === "saved"}
-                class:error={saveState === "error"}
-            >
-                {saveMessage}
-            </p>
-        {/if}
-    </section>
+    <div class="save-bar">
+<button type="button" onclick={saveCipher} disabled={saveState === "saving"}>
+Save Cipher Sequence
+
+{#if saveMessage}
+{saveMessage}
+{/if}
+</button>
+</div>
 </main>
-
-<style>
-    .tool-toolbar {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        flex-wrap: wrap;
-        gap: 0.75rem;
-        padding-bottom: 0.75rem;
-        margin-bottom: 1rem;
-        border-bottom: 1px solid #ddd;
-    }
-
-    .tool-heading {
-        display: flex;
-        flex-direction: column;
-        gap: 0.2rem;
-    }
-
-    .tool-heading span {
-        font-size: 0.85rem;
-        color: #777;
-    }
-
-    .tool-actions {
-        display: flex;
-        align-items: center;
-        gap: 0.4rem;
-    }
-
-    .tool-actions button {
-        min-width: 36px;
-        min-height: 36px;
-        padding: 0.4rem 0.65rem;
-        border: 1px solid #ccc;
-        border-radius: 6px;
-        background: #fff;
-        color: inherit;
-        font-size: 1rem;
-        cursor: pointer;
-    }
-
-    .tool-actions button:hover:not(:disabled) {
-        background: #f1f3f5;
-    }
-
-    .tool-actions button:disabled {
-        opacity: 0.35;
-        cursor: not-allowed;
-    }
-
-    .tool-actions .remove-tool {
-        color: #b42318;
-        border-color: #e5b7b3;
-    }
-
-    .tool-actions .remove-tool:hover {
-        background: #fef2f2;
-    }
-</style>

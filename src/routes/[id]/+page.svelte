@@ -6,7 +6,8 @@
 	import SubstitutionAnswerer from "../../components/answerer/substitution.svelte";
 	import CustomGlyphAnswerer from "../../components/answerer/custom-glyph.svelte";
 	import MorseAnswerer from "../../components/answerer/morse.svelte";
-
+	import PolybiusAnswerer from "../../components/answerer/polybius.svelte";
+	
 	type CodeEntry = {
 		type?: string;
 		alphabet?: string;
@@ -29,6 +30,7 @@
 			message?: string;
 			cipherText?: string;
 		};
+		polybius?: CodeEntry; // Added to map explicit standalone polybius configurations
 	};
 
 	const cipherId = $derived(page.params.id ?? "");
@@ -53,6 +55,10 @@
 			value === "morsecode"
 		) {
 			return "morse";
+		}
+
+		if (value === "polybius") {
+			return "polybius"; // Added explicit helper conversion map string
 		}
 
 		return "";
@@ -123,6 +129,11 @@
 					<MorseAnswerer
 						cipherText={entry.cipherText ?? entry.message ?? ""}
 					/>
+				{:else if getCodeType(entry) === "polybius"}
+					<PolybiusAnswerer
+						key={entry.key ?? "key"}
+						cipherText={entry.cipherText ?? entry.message ?? ""}
+					/>
 				{/if}
 			{/each}
 		{:else}
@@ -148,6 +159,15 @@
 				<MorseAnswerer
 					cipherText={cipher.morse?.cipherText ??
 						cipher.morse?.message ??
+						""}
+				/>
+			{/if}
+
+			{#if cipher.tools?.includes("polybius")}
+				<PolybiusAnswerer
+					key={cipher.polybius?.key ?? "key"}
+					cipherText={cipher.polybius?.cipherText ??
+						cipher.polybius?.message ??
 						""}
 				/>
 			{/if}
