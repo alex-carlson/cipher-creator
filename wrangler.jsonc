@@ -16,4 +16,12 @@
             "id": "305779bcedd045898dde60cd4d681950"
         }
     ],
+      "previews": {
+        "kv_namespaces": [
+          {
+            "binding": "passphrase",
+            "id": "305779bcedd045898dde60cd4d681950"
+          }
+        ]
+      }
 }
