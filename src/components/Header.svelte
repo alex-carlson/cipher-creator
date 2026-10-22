@@ -2,7 +2,13 @@
 	import { page } from "$app/state";
 	import AuthModal from "./AuthModal.svelte";
 	// import home, pencil, question, and browse icons from lucide
-	import { CircleQuestionMark, House, SquarePen, Search, UserRound} from "lucide-svelte";
+	import {
+		CircleQuestionMark,
+		House,
+		SquarePen,
+		Search,
+		UserRound,
+	} from "lucide-svelte";
 
 	let showAuthModal = $state(false);
 
@@ -10,7 +16,7 @@
 		{ href: "/", label: "Home", icon: House },
 		{ href: "/create", label: "Create", icon: SquarePen },
 		{ href: "/browse", label: "Browse", icon: Search },
-		{ href: "/about", label: "About", icon: CircleQuestionMark }
+		{ href: "/about", label: "About", icon: CircleQuestionMark },
 	];
 
 	const isActive = (href: string) => page.url.pathname === href;
@@ -26,13 +32,16 @@
 	<div class="brand-wrap">
 		<a class="brand" href="/">
 			<img
-				src="/images/codebreaker-logo-white.png"
+				src="/images/codebreakers.svg"
 				alt="Codebreaker Logo"
 				height="80"
 			/>
-			<h1>ctrl alt decode</h1>
 		</a>
-		<button class="mobile-toggle" aria-label="Toggle navigation" on:click={toggleMobileNav}>
+		<button
+			class="mobile-toggle"
+			aria-label="Toggle navigation"
+			on:click={toggleMobileNav}
+		>
 			☰
 		</button>
 	</div>
@@ -51,7 +60,7 @@
 			</a>
 		{/each}
 
-		<button
+		<!-- <button
 			type="button"
 			class="login-button"
 			on:click={() => (showAuthModal = true)}
@@ -62,7 +71,7 @@
 		<span>
 			Login
 		</span>
-		</button>
+		</button> -->
 	</nav>
 </header>
 

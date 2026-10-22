@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg width="100%" height="100%" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xml:space="preserve" xmlns:affinity="https://www.affinity.studio/" style="fill-rule:evenodd;clip-rule:evenodd;stroke-linejoin:round;stroke-miterlimit:2;">
+    <g transform="matrix(0.599193,0,0,0.599193,11.987664,201.423784)">
+        <g transform="matrix(0.987464,0,0,1,0.352411,0)">
+            <text x="28.112px" y="335.496px" style="font-family:'AlteHaasGrotesk_Bold', 'Alte Haas Grotesk';font-weight:700;font-size:416px;fill:white;stroke:white;stroke-width:1.68px;">C<tspan x="303.504px 524.816px 792.304px " y="335.496px 335.496px 335.496px ">TRL</tspan></text>
+        </g>
+        <g transform="matrix(0.987464,0,0,1,0.352411,0)">
+            <text x="28.112px" y="670.947px" style="font-family:'AlteHaasGrotesk_Bold', 'Alte Haas Grotesk';font-weight:700;font-size:416px;fill:white;stroke:white;stroke-width:1.68px;">A<tspan x="280.208px 494.032px " y="670.947px 670.947px ">LT</tspan></text>
+        </g>
+        <g transform="matrix(0.987464,0,0,1,0.352411,0)">
+            <text x="28.112px" y="1006.399px" style="font-family:'AlteHaasGrotesk_Bold', 'Alte Haas Grotesk';font-weight:700;font-size:416px;fill:rgb(223,171,97);stroke:white;stroke-width:1.68px;">D<tspan x="303.504px 540.208px 815.6px 1106.384px 1381.776px " y="1006.399px 1006.399px 1006.399px 1006.399px 1006.399px ">ECODE</tspan></text>
+        </g>
+    </g>
+</svg>
