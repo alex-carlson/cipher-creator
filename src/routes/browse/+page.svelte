@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { onMount } from "svelte";
+	import { Lock } from "lucide-svelte";
 	import { collection, getDocs, orderBy, query } from "firebase/firestore";
 	import { db, firebaseReady } from "$lib/firebase";
 	import { getCipherComplexity } from "$lib/cipher-parser";
@@ -23,14 +24,6 @@
 	let loading = $state(true);
 	let errorMessage = $state("");
 
-	const formatDate = (value?: CipherRecord["createdAt"]) => {
-		if (!value) return "Recently";
-		if (typeof value.toDate === "function") {
-			return value.toDate().toLocaleString();
-		}
-		return "Recently";
-	};
-
 	onMount(async () => {
 		if (!firebaseReady || !db) {
 			errorMessage = "Firebase is not configured yet.";
@@ -42,6 +35,7 @@
 			const snapshot = await getDocs(
 				query(collection(db, "ciphers"), orderBy("createdAt", "desc")),
 			);
+
 			ciphers = snapshot.docs.map((doc) => ({
 				id: doc.id,
 				...(doc.data() as Omit<CipherRecord, "id">),
@@ -53,6 +47,12 @@
 			loading = false;
 		}
 	});
+
+	function getDifficulty(cipher: CipherRecord): number {
+		const complexity = getCipherComplexity(cipher);
+
+		return Math.max(1, Math.min(5, Math.round(complexity)));
+	}
 </script>
 
 <svelte:head>
@@ -73,18 +73,55 @@
 			{#each ciphers as cipher (cipher.id)}
 				<li class="cipher-card">
 					<h2>
-						<a href={`/${cipher.id}`}
-							>{cipher.name || "Untitled cipher"}</a
-						>
+						<a href={`/${cipher.id}`}>
+							{cipher.name || "Untitled cipher"}
+						</a>
 					</h2>
+
 					<p class="meta">
 						Created: {formatRelativeDate(cipher.createdAt)}
 					</p>
-					<p class="complexity">
-						Complexity: {getCipherComplexity(cipher)}
-					</p>
+
+					<div
+						class="complexity"
+						role="img"
+						aria-label={`Difficulty: ${getDifficulty(cipher)} out of 5`}
+						title={`Difficulty: ${getDifficulty(cipher)} out of 5`}
+					>
+						{#each Array.from({ length: 5 }, (_, i) => i + 1) as level (level)}
+							<Lock
+								size={16}
+								strokeWidth={2}
+								class={level <= getDifficulty(cipher)
+									? "filled"
+									: "muted"}
+							/>
+						{/each}
+					</div>
 				</li>
 			{/each}
 		</ul>
 	{/if}
 </main>
+
+<style>
+	.complexity {
+		display: flex;
+		align-items: center;
+		gap: 4px;
+		margin-top: 8px;
+	}
+
+	.complexity :global(svg) {
+		flex-shrink: 0;
+	}
+
+	.complexity :global(svg.filled) {
+		color: var(--accent, #dba359);
+	}
+
+	.complexity :global(svg.muted) {
+		color: var(--muted, #68717a);
+		opacity: 0.4;
+	}
+</style>

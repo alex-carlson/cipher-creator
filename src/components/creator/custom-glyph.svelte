@@ -19,10 +19,20 @@
 
 	type BrushShape = "round" | "square";
 
+	const MIN_RESOLUTION = 3;
+
 	let brushSize = $state(4);
 	let brushShape = $state<BrushShape>("round");
 	let brushColor = $state("#CFD8EB");
 	let canvasDisplaySize = $state(128);
+	let canvasResolution = $state(128);
+
+	// Resolution can never exceed the display size. Using a derived value
+	// (instead of overwriting canvasResolution) means the chosen resolution
+	// comes back if the display size is enlarged again.
+	const effectiveResolution = $derived(
+		Math.max(MIN_RESOLUTION, Math.min(canvasResolution, canvasDisplaySize)),
+	);
 
 	const BRUSH_SIZES = [
 		{ label: "Fine", value: 2 },
@@ -47,29 +57,34 @@
 	const contextMap = new Map<number, CanvasRenderingContext2D>();
 	const drawingMap = new Map<number, boolean>();
 
-	const resetCanvas = (canvas: HTMLCanvasElement, glyphId: number) => {
-		const context = canvas.getContext("2d");
-		if (!context) return;
-
-		context.clearRect(0, 0, canvas.width, canvas.height);
-
+	// Changing a canvas's width/height wipes its context state, so brush
+	// settings are applied through one helper that can be re-run after resizes.
+	const applyBrush = (context: CanvasRenderingContext2D) => {
 		context.lineCap = brushShape === "round" ? "round" : "butt";
 		context.lineJoin = brushShape === "round" ? "round" : "miter";
 		context.lineWidth = brushSize;
 		context.strokeStyle = brushColor;
 		context.fillStyle = brushColor;
+	};
+
+	const resetCanvas = (canvas: HTMLCanvasElement, glyphId: number) => {
+		const context = canvas.getContext("2d");
+		if (!context) return;
+
+		context.clearRect(0, 0, canvas.width, canvas.height);
+		applyBrush(context);
 
 		contextMap.set(glyphId, context);
 	};
 
-	function fillStyleForSquareBrush(
-		context: CanvasRenderingContext2D,
-		color: string,
-	) {
-		context.fillStyle = color;
-	}
-
 	const registerCanvas = (node: HTMLCanvasElement, glyphId: number) => {
+		// Set the intrinsic size here rather than via a template attribute, so
+		// that resolution changes go through resizeGlyphCanvases (which keeps the
+		// drawing) instead of Svelte clearing the canvas by resetting width.
+		const size = untrack(() => effectiveResolution);
+		node.width = size;
+		node.height = size;
+
 		canvasMap.set(glyphId, node);
 		resetCanvas(node, glyphId);
 		return {
@@ -78,6 +93,56 @@
 				contextMap.delete(glyphId);
 			},
 		};
+	};
+
+	// Resample every glyph canvas to the new resolution, keeping what was drawn.
+	const resizeGlyphCanvases = (size: number) => {
+		let changed = false;
+
+		for (const [id, canvas] of canvasMap) {
+			if (canvas.width === size && canvas.height === size) continue;
+
+			const oldWidth = canvas.width;
+			const oldHeight = canvas.height;
+
+			const snapshot = document.createElement("canvas");
+			snapshot.width = oldWidth;
+			snapshot.height = oldHeight;
+			snapshot.getContext("2d")?.drawImage(canvas, 0, 0);
+
+			canvas.width = size;
+			canvas.height = size;
+
+			const context = canvas.getContext("2d");
+			if (!context) continue;
+
+			// Smooth when shrinking so thin strokes don't vanish; keep pixels
+			// hard-edged when enlarging so low-res glyphs stay crisp.
+			context.imageSmoothingEnabled = size < oldWidth;
+			context.imageSmoothingQuality = "high";
+			context.drawImage(snapshot, 0, 0, size, size);
+
+			applyBrush(context);
+			contextMap.set(id, context);
+			drawingMap.set(id, false);
+			changed = true;
+		}
+
+		if (!changed) return;
+
+		glyphs = glyphs.map((glyph) => {
+			const canvas = canvasMap.get(glyph.id);
+			return canvas
+				? { ...glyph, dataUrl: canvas.toDataURL("image/png") }
+				: glyph;
+		});
+
+		renderEncodedCanvas();
+
+		dispatch("cipherChange", {
+			message,
+			glyphs: [...glyphs],
+		});
 	};
 
 	const resetGlyph = (id: number) => {
@@ -271,52 +336,39 @@
 		encodedCanvas.height = canvasHeight;
 		context.clearRect(0, 0, encodedCanvas.width, encodedCanvas.height);
 
+		// Resizing resets context state; low-resolution glyphs should scale up
+		// as hard pixels rather than a blur.
+		context.imageSmoothingEnabled = false;
+
 		encodedGlyphs.forEach(({ glyph, symbol }, index) => {
 			const row = Math.floor(index / maxPerRow);
 			const col = index % maxPerRow;
 			const x = col * (glyphCellWidth + gap);
 			const y = row * (glyphCellHeight + gap);
 
-			if (!glyph) {
-				context.fillStyle = "#111827";
-				context.font = `${Math.min(24, 48 / [...symbol].length)}px sans-serif`;
-				context.textAlign = "center";
-				context.textBaseline = "middle";
-				context.fillText(
-					symbol,
-					x + glyphCellWidth / 2,
-					y + glyphCellHeight / 2,
-					glyphCellWidth - 4,
+			const sourceCanvas = glyph ? canvasMap.get(glyph.id) : undefined;
+
+			if (sourceCanvas) {
+				context.drawImage(
+					sourceCanvas,
+					x,
+					y,
+					glyphCellWidth,
+					glyphCellHeight,
 				);
 				return;
 			}
 
-			const sourceCanvas = canvasMap.get(glyph.id);
-			if (sourceCanvas) {
-				const drawWidth = 64;
-				const drawHeight = 64;
-				const drawX = x + (glyphCellWidth - drawWidth) / 2;
-				const drawY = y + (glyphCellHeight - drawHeight) / 2;
-				context.drawImage(
-					sourceCanvas,
-					drawX,
-					drawY,
-					drawWidth,
-					drawHeight,
-				);
-			} else {
-				context.fillStyle = "#111827";
-				context.font = "24px sans-serif";
-				context.textAlign = "center";
-				context.textBaseline = "middle";
-				context.font = `${Math.min(24, 48 / [...symbol].length)}px sans-serif`;
-				context.fillText(
-					symbol,
-					x + glyphCellWidth / 2,
-					y + glyphCellHeight / 2,
-					glyphCellWidth - 4,
-				);
-			}
+			context.fillStyle = "#111827";
+			context.font = `${Math.min(24, 48 / [...symbol].length)}px sans-serif`;
+			context.textAlign = "center";
+			context.textBaseline = "middle";
+			context.fillText(
+				symbol,
+				x + glyphCellWidth / 2,
+				y + glyphCellHeight / 2,
+				glyphCellWidth - 4,
+			);
 		});
 	};
 
@@ -330,14 +382,20 @@
 		context.fillRect(x - size / 2, y - size / 2, size, size);
 	};
 
+	const toCanvasPoint = (event: PointerEvent, canvas: HTMLCanvasElement) => {
+		const rect = canvas.getBoundingClientRect();
+		return {
+			x: ((event.clientX - rect.left) / rect.width) * canvas.width,
+			y: ((event.clientY - rect.top) / rect.height) * canvas.height,
+		};
+	};
+
 	const draw = (event: PointerEvent, id: number) => {
 		const context = contextMap.get(id);
 		const canvas = canvasMap.get(id);
 		if (!context || !canvas || !drawingMap.get(id)) return;
 
-		const rect = canvas.getBoundingClientRect();
-		const x = ((event.clientX - rect.left) / rect.width) * canvas.width;
-		const y = ((event.clientY - rect.top) / rect.height) * canvas.height;
+		const { x, y } = toCanvasPoint(event, canvas);
 
 		if (brushShape === "square") {
 			drawSquareStamp(context, x, y);
@@ -357,9 +415,7 @@
 		canvas.setPointerCapture(event.pointerId);
 		drawingMap.set(id, true);
 
-		const rect = canvas.getBoundingClientRect();
-		const x = ((event.clientX - rect.left) / rect.width) * canvas.width;
-		const y = ((event.clientY - rect.top) / rect.height) * canvas.height;
+		const { x, y } = toCanvasPoint(event, canvas);
 
 		context.beginPath();
 		context.moveTo(x, y);
@@ -394,8 +450,19 @@
 			.join("");
 	});
 
+	// Repaint the encoded output whenever the message, glyphs, or either
+	// canvas size changes.
 	$effect(() => {
+		void canvasDisplaySize;
+		void effectiveResolution;
 		renderEncodedCanvas();
+	});
+
+	// Resample glyph canvases when the resolution changes. untrack keeps the
+	// glyphs write inside resizeGlyphCanvases from re-triggering this effect.
+	$effect(() => {
+		const size = effectiveResolution;
+		untrack(() => resizeGlyphCanvases(size));
 	});
 
 	$effect(() => {
@@ -407,16 +474,12 @@
 	});
 
 	$effect(() => {
-		const size = brushSize;
-		const shape = brushShape;
-		const color = brushColor;
+		void brushSize;
+		void brushShape;
+		void brushColor;
 
 		for (const context of contextMap.values()) {
-			context.lineWidth = size;
-			context.lineCap = shape === "round" ? "round" : "butt";
-			context.lineJoin = shape === "round" ? "round" : "miter";
-			context.strokeStyle = color;
-			context.fillStyle = color;
+			applyBrush(context);
 		}
 	});
 
@@ -500,6 +563,18 @@
 				/>
 				<span>{canvasDisplaySize}px</span>
 			</label>
+
+			<label class="canvas-resolution-control">
+				Canvas resolution
+				<input
+					type="range"
+					min={MIN_RESOLUTION}
+					max={canvasDisplaySize}
+					step="1"
+					bind:value={canvasResolution}
+				/>
+				<span>{effectiveResolution}×{effectiveResolution}px</span>
+			</label>
 		</div>
 
 		<div class="glyph-grid">
@@ -509,8 +584,6 @@
 
 					<canvas
 						data-glyph-id={glyph.id}
-						width="128"
-						height="128"
 						style={`--glyph-display-size: ${canvasDisplaySize}px`}
 						use:registerCanvas={glyph.id}
 						on:pointerdown={(event) =>
@@ -632,5 +705,14 @@
 	.color-picker span {
 		font-family: monospace;
 		font-size: 0.875rem;
+	}
+
+	/* Display size is decoupled from the canvas's pixel resolution. */
+	.glyph-card canvas {
+		display: block;
+		width: var(--glyph-display-size, 128px);
+		height: var(--glyph-display-size, 128px);
+		image-rendering: pixelated;
+		touch-action: none;
 	}
 </style>
