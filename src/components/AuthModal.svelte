@@ -97,31 +97,30 @@
 
         try {
             authError = ""; // Clear old errors
-        
+
             // Call your SvelteKit backend route
-            const response = await fetch('/api/auth/keyphrase', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ keyPhrase })
+            const response = await fetch("/api/auth/keyphrase", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ keyPhrase }),
             });
 
             const data = await response.json();
 
             if (!response.ok) {
-                throw new Error(data.message || 'Authentication failed');
+                throw new Error(data.message || "Authentication failed");
             }
 
             // Successfully authenticated!
             console.log("Login successful! User email is:", data.email);
             userEmail = data.email;
             open = false; // Close the modal
-        
         } catch (error: any) {
             console.error("Key phrase login failed:", error);
-            authError = error.message || "Invalid key phrase. Please try again.";
+            authError =
+                error.message || "Invalid key phrase. Please try again.";
         }
     }
-
 </script>
 
 <svelte:window onkeydown={handleKeydown} />
@@ -135,11 +134,12 @@
             }
         }}
     >
-        <section
+        <div
             class="auth-modal"
             role="dialog"
             aria-modal="true"
             aria-labelledby="auth-title"
+            tabindex="-1"
         >
             <button
                 class="close-button"
@@ -173,8 +173,10 @@
                 bind:value={keyPhrase}
             />
 
-            <button type="button" onclick={loginWithKeyPhrase}>Login with Key Phrase</button>
-        </section>
+            <button type="button" onclick={loginWithKeyPhrase}
+                >Login with Key Phrase</button
+            >
+        </div>
     </div>
 {/if}
 

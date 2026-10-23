@@ -17,7 +17,7 @@
 		cipherChange: CustomGlyphConfig;
 	}>();
 
-	type BrushShape = "round" | "square";
+	type BrushShape = "round" | "square" | "pencil";
 
 	const MIN_RESOLUTION = 3;
 
@@ -60,11 +60,16 @@
 	// Changing a canvas's width/height wipes its context state, so brush
 	// settings are applied through one helper that can be re-run after resizes.
 	const applyBrush = (context: CanvasRenderingContext2D) => {
+		const isPencil = brushShape === "pencil";
+
 		context.lineCap = brushShape === "round" ? "round" : "butt";
 		context.lineJoin = brushShape === "round" ? "round" : "miter";
 		context.lineWidth = brushSize;
 		context.strokeStyle = brushColor;
 		context.fillStyle = brushColor;
+
+		// Use hard pixel edges for the pencil tool.
+		context.imageSmoothingEnabled = !isPencil;
 	};
 
 	const resetCanvas = (canvas: HTMLCanvasElement, glyphId: number) => {
@@ -384,10 +389,16 @@
 
 	const toCanvasPoint = (event: PointerEvent, canvas: HTMLCanvasElement) => {
 		const rect = canvas.getBoundingClientRect();
-		return {
-			x: ((event.clientX - rect.left) / rect.width) * canvas.width,
-			y: ((event.clientY - rect.top) / rect.height) * canvas.height,
-		};
+
+		let x = ((event.clientX - rect.left) / rect.width) * canvas.width;
+		let y = ((event.clientY - rect.top) / rect.height) * canvas.height;
+
+		if (brushShape === "pencil") {
+			x = Math.floor(x);
+			y = Math.floor(y);
+		}
+
+		return { x, y };
 	};
 
 	const draw = (event: PointerEvent, id: number) => {
@@ -399,6 +410,8 @@
 
 		if (brushShape === "square") {
 			drawSquareStamp(context, x, y);
+		} else if (brushShape === "pencil") {
+			context.fillRect(x, y, 1, 1);
 		} else {
 			context.lineTo(x, y);
 			context.stroke();
@@ -514,6 +527,7 @@
 				<select bind:value={brushShape}>
 					<option value="round">Round pen</option>
 					<option value="square">Square pen</option>
+					<option value="pencil">Pencil</option>
 				</select>
 			</label>
 
@@ -577,7 +591,10 @@
 			</label>
 		</div>
 
-		<div class="glyph-grid">
+		<div
+			class="glyph-grid"
+			style={`--glyph-display-size: ${canvasDisplaySize}px`}
+		>
 			{#each glyphs as glyph (glyph.id)}
 				<div class="glyph-card">
 					<span class="glyph-char">{glyph.char}</span>
@@ -586,18 +603,17 @@
 						data-glyph-id={glyph.id}
 						style={`--glyph-display-size: ${canvasDisplaySize}px`}
 						use:registerCanvas={glyph.id}
-						on:pointerdown={(event) =>
-							startDrawing(event, glyph.id)}
-						on:pointermove={(event) => draw(event, glyph.id)}
-						on:pointerup={() => stopDrawing(glyph.id)}
-						on:pointerleave={() => stopDrawing(glyph.id)}
-						on:pointercancel={() => stopDrawing(glyph.id)}
+						onpointerdown={(event) => startDrawing(event, glyph.id)}
+						onpointermove={(event) => draw(event, glyph.id)}
+						onpointerup={() => stopDrawing(glyph.id)}
+						onpointerleave={() => stopDrawing(glyph.id)}
+						onpointercancel={() => stopDrawing(glyph.id)}
 					></canvas>
 
 					<div class="glyph-actions">
 						<button
 							type="button"
-							on:click={() => resetGlyph(glyph.id)}
+							onclick={() => resetGlyph(glyph.id)}
 							aria-label={`Reset glyph ${glyph.id}`}
 						>
 							<RotateCcw size={14} />
@@ -605,7 +621,7 @@
 						</button>
 						<!-- <button
 						type="button"
-						on:click={() => removeGlyph(glyph.id)}
+						onclick={() => removeGlyph(glyph.id)}
 						aria-label={`Remove glyph ${glyph.id}`}
 					>
 						<Trash2 size={14} />
@@ -628,6 +644,8 @@
 <style>
 	.controls {
 		padding: 1rem;
+		text-align: center;
+		background-color: #000;
 	}
 
 	.controls label {
@@ -652,6 +670,8 @@
 		align-items: end;
 		gap: 1rem;
 		margin-bottom: 1rem;
+		background-color: #000;
+		padding: 1rem;
 	}
 
 	.brush-controls label {
@@ -707,12 +727,83 @@
 		font-size: 0.875rem;
 	}
 
-	/* Display size is decoupled from the canvas's pixel resolution. */
+	/* Responsive grid: cards size themselves around the selected canvas size. */
+	.glyph-grid {
+		display: grid;
+		grid-template-columns: repeat(
+			auto-fill,
+			minmax(
+				min(100%, calc(var(--glyph-display-size, 128px) + 1.5rem)),
+				1fr
+			)
+		);
+		align-items: start;
+		justify-items: center;
+		gap: 1rem;
+		width: 100%;
+		box-sizing: border-box;
+	}
+
+	.glyph-card {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		gap: 0.75rem;
+		min-width: 0;
+		max-width: 100%;
+		box-sizing: border-box;
+	}
+
+	.glyph-char {
+		font-weight: 700;
+		font-size: 1.125rem;
+		line-height: 1.2;
+	}
+
+	/* Keep the canvas square and responsive without changing its pixel resolution. */
 	.glyph-card canvas {
 		display: block;
-		width: var(--glyph-display-size, 128px);
-		height: var(--glyph-display-size, 128px);
+		width: min(var(--glyph-display-size, 64px), 100%);
+		max-width: 100%;
+		aspect-ratio: 1;
+		height: auto;
+		box-sizing: border-box;
 		image-rendering: pixelated;
 		touch-action: none;
+		border: 1px solid #ffffff;
+		border-radius: 0;
+	}
+
+	.glyph-actions {
+		display: flex;
+		justify-content: center;
+		flex-wrap: wrap;
+		gap: 0.5rem;
+		width: 100%;
+	}
+
+	.glyph-actions button {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		gap: 0.35rem;
+		max-width: 100%;
+	}
+
+	/* The generated preview should scale to its container instead of overflowing. */
+	.output {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: baseline;
+		gap: 0.5rem;
+		margin-block: 1rem;
+		overflow-wrap: anywhere;
+	}
+
+	.cipher > canvas {
+		display: block;
+		max-width: 100%;
+		height: auto;
+		image-rendering: pixelated;
 	}
 </style>

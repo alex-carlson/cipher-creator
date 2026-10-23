@@ -40,7 +40,7 @@
 		<button
 			class="mobile-toggle"
 			aria-label="Toggle navigation"
-			on:click={toggleMobileNav}
+			onclick={toggleMobileNav}
 		>
 			☰
 		</button>
@@ -48,30 +48,14 @@
 
 	<nav class="site-nav" aria-label="Main navigation">
 		{#each navItems as item}
+			{@const Icon = item.icon}
 			<a class:active={isActive(item.href)} href={item.href}>
-				{#if item.icon}
-					<span>
-						<svelte:component this={item.icon} />
-					</span>
-				{/if}
 				<span>
-					{item.label}
+					<Icon />
 				</span>
+				<span>{item.label}</span>
 			</a>
 		{/each}
-
-		<!-- <button
-			type="button"
-			class="login-button"
-			on:click={() => (showAuthModal = true)}
-		>
-		<span>
-			<UserRound />
-		</span>
-		<span>
-			Login
-		</span>
-		</button> -->
 	</nav>
 </header>
 
