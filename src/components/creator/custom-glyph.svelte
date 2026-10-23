@@ -34,6 +34,8 @@
 		Math.max(MIN_RESOLUTION, Math.min(canvasResolution, canvasDisplaySize)),
 	);
 
+	// TODO add emoji and number support
+
 	const BRUSH_SIZES = [
 		{ label: "Fine", value: 2 },
 		{ label: "Medium", value: 4 },

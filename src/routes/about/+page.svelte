@@ -9,6 +9,6 @@
     <p>
         <b>Thanks to</b>:<br />
         The whole YSA cryptography class for giving me suggestions on how to improve
-        the tools, and Neela/Wolf for the name suggestion.
+        the tools, and Wolf for the name suggestion.
     </p>
 </main>
