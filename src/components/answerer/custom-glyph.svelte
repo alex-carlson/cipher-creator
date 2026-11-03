@@ -61,9 +61,14 @@
 	type CustomGlyphProps = {
 		glyphs?: Glyph[];
 		message?: string;
+		onSolved?: () => void;
 	};
 
-	let { glyphs: glyphList = [], message = "" }: CustomGlyphProps = $props();
+	let {
+		glyphs: glyphList = [],
+		message = "",
+		onSolved,
+	}: CustomGlyphProps = $props();
 
 	const normalize = (value: string) => value.trim().toUpperCase();
 
@@ -130,6 +135,10 @@
 		];
 
 		return keys.length > 0 && keys.every(isCorrect);
+	});
+
+	$effect(() => {
+		if (allSolved) onSolved?.();
 	});
 </script>
 

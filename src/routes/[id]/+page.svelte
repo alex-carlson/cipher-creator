@@ -19,6 +19,7 @@
 
 	type SavedCipher = {
 		name?: string;
+		sequential?: boolean;
 		codes?: CodeEntry[];
 		tools?: string[];
 		substitution?: CodeEntry;
@@ -37,6 +38,13 @@
 	let cipher = $state<SavedCipher | null>(null);
 	let loading = $state(true);
 	let errorMessage = $state("");
+	let currentCodeIndex = $state(0);
+
+	const markCodeSolved = (index: number) => {
+		if (cipher?.sequential && index === currentCodeIndex) {
+			currentCodeIndex += 1;
+		}
+	};
 
 	const getCodeType = (entry: CodeEntry | undefined) => {
 		if (!entry) return "";
@@ -112,30 +120,39 @@
 		</p>
 
 		{#if cipher.codes?.length}
-			{#each cipher.codes as entry}
-				{#if getCodeType(entry) === "substitution"}
+			{#each cipher.codes as entry, index}
+				{#if !cipher.sequential || index === currentCodeIndex}
+					{#if getCodeType(entry) === "substitution"}
 					<SubstitutionAnswerer
 						alphabet={entry.alphabet ??
 							"abcdefghijklmnopqrstuvwxyz"}
 						key={entry.key ?? "key"}
 						cipherText={entry.cipherText ?? entry.message ?? ""}
+						onSolved={() => markCodeSolved(index)}
 					/>
-				{:else if getCodeType(entry) === "custom-glyph"}
+					{:else if getCodeType(entry) === "custom-glyph"}
 					<CustomGlyphAnswerer
 						message={entry.message ?? ""}
 						glyphs={entry.glyphs ?? []}
+						onSolved={() => markCodeSolved(index)}
 					/>
-				{:else if getCodeType(entry) === "morse"}
+					{:else if getCodeType(entry) === "morse"}
 					<MorseAnswerer
 						cipherText={entry.cipherText ?? entry.message ?? ""}
+						onSolved={() => markCodeSolved(index)}
 					/>
-				{:else if getCodeType(entry) === "polybius"}
+					{:else if getCodeType(entry) === "polybius"}
 					<PolybiusAnswerer
 						key={entry.key ?? "key"}
 						cipherText={entry.cipherText ?? entry.message ?? ""}
+						onSolved={() => markCodeSolved(index)}
 					/>
+					{/if}
 				{/if}
 			{/each}
+			{#if cipher.sequential && currentCodeIndex >= cipher.codes.length}
+				<p class="sequence-complete">You solved the entire cipher sequence!</p>
+			{/if}
 		{:else}
 			{#if cipher.tools?.includes("substitution")}
 				<SubstitutionAnswerer

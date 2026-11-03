@@ -2,10 +2,14 @@
     type PolybiusProps = {
         key?: string;
         cipherText?: string;
+        onSolved?: () => void;
     };
 
-    let { key = "", cipherText: initialCipherText = "" }: PolybiusProps =
-        $props();
+    let {
+        key = "",
+        cipherText: initialCipherText = "",
+        onSolved,
+    }: PolybiusProps = $props();
 
     // 5x5 Polybius base alphabet (omitting j, which maps to i)
     const alphabet = "abcdefghiklmnopqrstuvwxyz";
@@ -85,6 +89,13 @@
     const isDecodedCorrectly = $derived(
         decodeText.trim().toLowerCase() === expectedPlainText.trim().toLowerCase()
     );
+    const isSolved = $derived(
+        userKey.trim().length > 0 && (isCorrect || isDecodedCorrectly),
+    );
+
+    $effect(() => {
+        if (isSolved) onSolved?.();
+    });
 </script>
 
 <section class="tool-panel">

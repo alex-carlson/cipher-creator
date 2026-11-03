@@ -1,9 +1,10 @@
 <script lang="ts">
     type MorseProps = {
         cipherText?: string;
+        onSolved?: () => void;
     };
 
-    let { cipherText: initialCipherText = "" }: MorseProps = $props();
+    let { cipherText: initialCipherText = "", onSolved }: MorseProps = $props();
 
     let cipherText = $state(initialCipherText);
     let userAnswer = $state("");
@@ -93,6 +94,11 @@
         userAnswer.trim().toLowerCase() ===
             expectedPlainText.trim().toLowerCase(),
     );
+    const isSolved = $derived(userAnswer.trim().length > 0 && isCorrect);
+
+    $effect(() => {
+        if (isSolved) onSolved?.();
+    });
 </script>
 
 <section class="tool-panel">

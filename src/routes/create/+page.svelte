@@ -76,6 +76,7 @@
     let selectedTool = $state<ToolType | "">("");
     let codes = $state<ToolCode[]>([]);
     let cipherName = $state("");
+    let sequential = $state(false);
     let saveState = $state<"idle" | "saving" | "saved" | "error">("idle");
     let saveMessage = $state("");
 
@@ -178,6 +179,7 @@
         try {
             const payload = {
                 name: trimmedName,
+                sequential,
                 codes: codes.map(({ type, data }) => ({
                     type,
                     ...data,
@@ -223,6 +225,14 @@
     />
 
     <p>Click on a cipher type to add it to your toolkit.</p>
+
+    <label class="sequential-option">
+        <input type="checkbox" bind:checked={sequential} />
+        <span>
+            Sequential
+            <small>Show each code only after the previous one is solved.</small>
+        </span>
+    </label>
 
     {#each codes as code, index (code.id)}
         <section class="tool-panel">
@@ -327,3 +337,23 @@ Save Cipher Sequence
 </button>
 </div>
 </main>
+
+<style>
+    .sequential-option {
+        display: flex;
+        align-items: flex-start;
+        gap: 0.6rem;
+        margin: 1rem 0;
+        cursor: pointer;
+    }
+
+    .sequential-option input {
+        margin-top: 0.25rem;
+    }
+
+    .sequential-option small {
+        display: block;
+        margin-top: 0.2rem;
+        color: #777;
+    }
+</style>

@@ -2,10 +2,14 @@
 	type SubstitutionProps = {
 		key?: string;
 		cipherText?: string;
+		onSolved?: () => void;
 	};
 
-	let { key = "", cipherText: initialCipherText = "" }: SubstitutionProps =
-		$props();
+	let {
+		key = "",
+		cipherText: initialCipherText = "",
+		onSolved,
+	}: SubstitutionProps = $props();
 
 	const alphabet = "abcdefghijklmnopqrstuvwxyz";
 
@@ -60,6 +64,13 @@
 		decodeText.trim().toLowerCase() ===
 			expectedPlainText.trim().toLowerCase(),
 	);
+	const isSolved = $derived(
+		userKey.trim().length > 0 && (isCorrect || isDecodedCorrectly),
+	);
+
+	$effect(() => {
+		if (isSolved) onSolved?.();
+	});
 </script>
 
 <section class="tool-panel">
