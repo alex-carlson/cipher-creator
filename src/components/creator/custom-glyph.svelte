@@ -2,6 +2,7 @@
 	import { createEventDispatcher, onMount, tick, untrack } from "svelte";
 	import { Download, RotateCcw } from "lucide-svelte";
 	import opentype from "opentype.js";
+	import { syncMessageGlyphs } from "$lib/message-glyphs";
 
 	const { Font, Glyph: FontGlyph, Path } = opentype;
 
@@ -175,47 +176,16 @@
 		});
 	};
 
-	const syncGlyphsToMessage = async (value: string) => {
-		const requiredChars = [
-			...new Set(
-				[...value.toLowerCase()].filter((char) => /[a-z0-9]/.test(char)),
-			),
-		];
+	const syncGlyphsToMessage = (value: string) => {
+		const updated = syncMessageGlyphs(value, glyphs, () => nextId++);
+		if (updated === glyphs) return;
 
-		const existingChars = new Set(
-			glyphs.map((glyph) => glyph.char.trim().toLowerCase()),
-		);
-
-		const missingChars = requiredChars.filter(
-			(char) => !existingChars.has(char),
-		);
-
-		if (missingChars.length === 0) return;
-
-		const newGlyphs = missingChars.map((char) => ({
-			id: nextId++,
-			char,
-			dataUrl: "",
-		}));
-
-		glyphs = [...glyphs, ...newGlyphs];
-
-		await tick();
-
-		for (const glyph of newGlyphs) {
-			const canvas = canvasMap.get(glyph.id);
-			if (canvas) {
-				resetCanvas(canvas, glyph.id);
-			}
-		}
-
-		renderEncodedCanvas();
-
-		// Immediately synchronize the new canvases with the parent.
+		glyphs = updated;
 		dispatch("cipherChange", {
 			message,
 			glyphs: [...glyphs],
 		});
+		void tick().then(() => renderEncodedCanvas());
 	};
 
 	const updateGlyphData = (id: number) => {
@@ -629,7 +599,7 @@
 		const currentMessage = message;
 
 		untrack(() => {
-			void syncGlyphsToMessage(currentMessage);
+			syncGlyphsToMessage(currentMessage);
 		});
 	});
 
