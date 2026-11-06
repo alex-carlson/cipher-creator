@@ -135,7 +135,7 @@
 
 		{#if cipher.codes?.length}
 			{#each cipher.codes as entry, index}
-				{#if !cipher.sequential || index === currentCodeIndex}
+				{#if !cipher.sequential || index <= currentCodeIndex}
 					{#if getCodeType(entry) === "substitution"}
 					<SubstitutionAnswerer
 						alphabet={entry.alphabet ??

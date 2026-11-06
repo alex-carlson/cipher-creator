@@ -35,13 +35,7 @@
 </script>
 
 <script lang="ts">
-	import { glyphGuesses, clearGlyphGuesses } from "./glyphGuesses.svelte";
-	import { onDestroy } from "svelte";
-
-	onDestroy(() => {
-		clearGlyphGuesses();
-	});
-
+	let glyphGuesses = $state<Record<string, string>>({});
 	let glyphScale = $state(1);
 
 	const decreaseScale = () => {

@@ -335,7 +335,7 @@
         <input type="checkbox" bind:checked={sequential} />
         <span>
             Sequential
-            <small>Show each code only after the previous one is solved.</small>
+            <small>Reveal each code after the previous one is solved, keeping solved codes visible.</small>
         </span>
     </label>
 
