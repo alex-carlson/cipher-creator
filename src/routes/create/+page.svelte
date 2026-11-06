@@ -4,9 +4,15 @@
     import CustomGlyph from "../../components/creator/custom-glyph.svelte";
     import Morse from "../../components/creator/morse.svelte";
     import Polybius from "../../components/creator/polybius.svelte";
+    import Binary from "../../components/creator/binary.svelte";
+    import Caesar from "../../components/creator/caesar.svelte";
+    import Pigpen from "../../components/creator/pigpen.svelte";
+    import Book from "../../components/creator/book.svelte";
+    import { decodeBook } from "$lib/book";
+    import { normalizePigpenKey } from "$lib/pigpen";
     import { db, firebaseReady } from "$lib/firebase";
 
-    type ToolType = "custom-glyph" | "substitution" | "morse" | "polybius";
+    type ToolType = "custom-glyph" | "substitution" | "morse" | "polybius" | "binary" | "caesar" | "pigpen" | "book";
     type SubstitutionConfig = {
         alphabet: string;
         key: string;
@@ -41,13 +47,54 @@
         cipherText: string;
     };
 
+    type BinaryConfig = {
+        message: string;
+        cipherText: string;
+    };
+
+    type CaesarConfig = {
+        message: string;
+        cipherText: string;
+        shift: number;
+    };
+
+    type PigpenConfig = {
+        key: string;
+        message: string;
+        cipherText: string;
+    };
+
     type MorseToolCode = {
         id: string;
         type: "morse";
         data: MorseConfig;
     };
 
-    type ToolCode = SubstitutionToolCode | CustomGlyphToolCode | PolybiusToolCode | MorseToolCode;
+    type BinaryToolCode = {
+        id: string;
+        type: "binary";
+        data: BinaryConfig;
+    };
+
+    type CaesarToolCode = {
+        id: string;
+        type: "caesar";
+        data: CaesarConfig;
+    };
+
+    type PigpenToolCode = {
+        id: string;
+        type: "pigpen";
+        data: PigpenConfig;
+    };
+
+    type BookToolCode = {
+        id: string;
+        type: "book";
+        data: PigpenConfig;
+    };
+
+    type ToolCode = SubstitutionToolCode | CustomGlyphToolCode | PolybiusToolCode | MorseToolCode | BinaryToolCode | CaesarToolCode | PigpenToolCode | BookToolCode;
 
     const makeSubstitutionConfig = (): SubstitutionConfig => ({
         alphabet: "abcdefghijklmnopqrstuvwxyz",
@@ -73,6 +120,29 @@
         cipherText: "",
     });
 
+    const makeBinaryConfig = (): BinaryConfig => ({
+        message: "",
+        cipherText: "",
+    });
+
+    const makeCaesarConfig = (): CaesarConfig => ({
+        message: "",
+        cipherText: "",
+        shift: 3,
+    });
+
+    const makePigpenConfig = (): PigpenConfig => ({
+        key: "keyword",
+        message: "",
+        cipherText: "",
+    });
+
+    const makeBookConfig = (): PigpenConfig => ({
+        key: "",
+        message: "",
+        cipherText: "",
+    });
+
     let selectedTool = $state<ToolType | "">("");
     let codes = $state<ToolCode[]>([]);
     let cipherName = $state("");
@@ -90,6 +160,14 @@
             initialData = makePolybiusConfig();
         } else if (selectedTool === "morse") {
             initialData = makeMorseConfig();
+        } else if (selectedTool === "binary") {
+            initialData = makeBinaryConfig();
+        } else if (selectedTool === "caesar") {
+            initialData = makeCaesarConfig();
+        } else if (selectedTool === "pigpen") {
+            initialData = makePigpenConfig();
+        } else if (selectedTool === "book") {
+            initialData = makeBookConfig();
         } else {
             initialData = makeCustomGlyphConfig();
         }
@@ -108,7 +186,7 @@
 
     const updateCode = (
         id: string,
-        value: SubstitutionConfig | CustomGlyphConfig | MorseConfig,
+        value: SubstitutionConfig | CustomGlyphConfig | MorseConfig | CaesarConfig | PigpenConfig,
     ) => {
         codes = codes.map((code) =>
             code.id === id ? ({ ...code, data: value } as ToolCode) : code,
@@ -157,6 +235,10 @@
         updateCode(id, event.detail);
     };
 
+    const handleBinaryChange = (event: any, id: string) => {
+        updateCode(id, event.detail);
+    };
+
     const saveCipher = async () => {
         const trimmedName = cipherName.trim();
 
@@ -164,6 +246,29 @@
             saveState = "error";
             saveMessage = "Please enter a cipher name before saving.";
             return;
+        }
+
+        if (codes.some((code) => code.type === "pigpen" && !normalizePigpenKey(code.data.key))) {
+            saveState = "error";
+            saveMessage = "Each Pigpen cipher needs a keyword containing at least one letter.";
+            return;
+        }
+
+        if (codes.some((code) => code.type === "pigpen" && !/[a-z]/i.test(code.data.message))) {
+            saveState = "error";
+            saveMessage = "Each Pigpen message needs at least one letter.";
+            return;
+        }
+
+        for (const code of codes) {
+            if (code.type === "book") {
+                const result = decodeBook(code.data.key, code.data.cipherText);
+                if (!result.ok) {
+                    saveState = "error";
+                    saveMessage = `Book cipher: ${result.error}`;
+                    return;
+                }
+            }
         }
 
         if (!firebaseReady || !db) {
@@ -247,6 +352,14 @@
                             Morse Code
                         {:else if code.type === "polybius"}
                             Polybius Square
+                        {:else if code.type === "binary"}
+                            Binary
+                        {:else if code.type === "caesar"}
+                            Caesar
+                        {:else if code.type === "pigpen"}
+                            Pigpen
+                        {:else if code.type === "book"}
+                            Book Cipher
                         {/if}
                     </strong>
                     <span>Cipher {index + 1} of {codes.length}</span>
@@ -308,6 +421,23 @@
                     onCipherChange={(event) =>
                         handleSubstitutionChange(event, code.id)}
                 />
+            {:else if code.type === "binary"}
+                <Binary
+                    on:cipherChange={(event) =>
+                        handleBinaryChange(event, code.id)}
+                />
+            {:else if code.type === "caesar"}
+                <Caesar
+                    on:cipherChange={(event) => updateCode(code.id, event.detail)}
+                />
+            {:else if code.type === "pigpen"}
+                <Pigpen
+                    on:cipherChange={(event) => updateCode(code.id, event.detail)}
+                />
+            {:else if code.type === "book"}
+                <Book
+                    on:cipherChange={(event) => updateCode(code.id, event.detail)}
+                />
             {/if}
         </section>
     {/each}
@@ -324,6 +454,10 @@
             <option value="custom-glyph">Custom Glyph</option>
             <option value="morse">Morse Code</option>
             <option value="polybius">Polybius Square</option>
+            <option value="binary">Binary</option>
+            <option value="caesar">Caesar</option>
+            <option value="pigpen">Pigpen</option>
+            <option value="book">Book Cipher</option>
         </select>
     </section>
 

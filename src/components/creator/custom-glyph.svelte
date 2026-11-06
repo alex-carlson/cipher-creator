@@ -1,7 +1,9 @@
 <script lang="ts">
 	import { createEventDispatcher, onMount, tick, untrack } from "svelte";
 	import { Download, RotateCcw } from "lucide-svelte";
-	import { Font, Glyph as FontGlyph, Path } from "opentype.js";
+	import opentype from "opentype.js";
+
+	const { Font, Glyph: FontGlyph, Path } = opentype;
 
 	type Glyph = {
 		id: number;
