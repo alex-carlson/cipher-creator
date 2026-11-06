@@ -34,11 +34,6 @@
     <h2>Book Cipher Solver</h2>
     <div class="cipher-flow">
         <div class="card">
-            <span class="step-label">SOURCE PASSAGE</span>
-            <p>Blank lines separate stanzas. Count stanza, line, word, and character from 1. Punctuation counts as part of a word; blank lines in the code separate words.</p>
-            <pre>{key || "No source passage provided."}</pre>
-        </div>
-        <div class="card">
             <span class="step-label">ENCODED COORDINATES</span>
             <pre>{cipherText || "No coordinates provided."}</pre>
         </div>
