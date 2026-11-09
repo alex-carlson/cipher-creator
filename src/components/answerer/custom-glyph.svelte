@@ -35,8 +35,12 @@
 </script>
 
 <script lang="ts">
+	import { Download } from "lucide-svelte";
+	import { downloadCustomGlyphFont } from "$lib/custom-glyph-font";
+
 	let glyphGuesses = $state<Record<string, string>>({});
 	let glyphScale = $state(1);
+	let fontExportError = $state("");
 
 	const decreaseScale = () => {
 		glyphScale = Math.max(0.6, +(glyphScale - 0.1).toFixed(1));
@@ -44,6 +48,20 @@
 
 	const increaseScale = () => {
 		glyphScale = Math.min(2, +(glyphScale + 0.1).toFixed(1));
+	};
+
+	const downloadFont = async () => {
+		fontExportError = "";
+
+		try {
+			await downloadCustomGlyphFont(glyphList);
+		} catch (error) {
+			console.error("Failed to export custom glyph font", error);
+			fontExportError =
+				error instanceof Error
+					? error.message
+					: "Something went wrong while creating the font.";
+		}
 	};
 
 	type Glyph = {
@@ -201,6 +219,19 @@
 		{/each}
 	</div>
 
+	<button
+		type="button"
+		class="font-download"
+		onclick={downloadFont}
+		disabled={glyphList.length === 0}
+	>
+		<Download size={16} />
+		Download font (.ttf)
+	</button>
+	{#if fontExportError}
+		<p class="font-export-error" role="alert">{fontExportError}</p>
+	{/if}
+
 	{#if allSolved}
 		<p class="success-message">Great job! You solved the message.</p>
 	{:else}
@@ -211,6 +242,17 @@
 </section>
 
 <style>
+	.font-download {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.5rem;
+	}
+
+	.font-export-error {
+		color: #dc2626;
+		margin: 0.5rem 0;
+	}
+
 	.sentence-toolbar {
 		display: flex;
 		align-items: center;
