@@ -79,6 +79,10 @@
 
     // Dynamic reactive parameters for validation checks
     const currentGridString = $derived(buildGridString(userKey));
+    // Coordinates regrouped as pairs, dropping the original word/sentence spacing
+    const coordinatePairs = $derived(
+        cipherText.replace(/[^1-5]/g, "").match(/[1-5]{2}/g)?.join(" ") ?? "",
+    );
     const decodeText = $derived(decodeWithKey(cipherText, userKey));
     const expectedPlainText = $derived(decodeWithKey(cipherText, key));
 
@@ -89,56 +93,41 @@
     const isDecodedCorrectly = $derived(
         decodeText.trim().toLowerCase() === expectedPlainText.trim().toLowerCase()
     );
-    const isSolved = $derived(
-        userKey.trim().length > 0 && (isCorrect || isDecodedCorrectly),
-    );
+    // Result of the last Confirm press; cleared when the keyword changes
+    let verdict = $state<"exact" | "decoded" | "wrong" | null>(null);
 
-    $effect(() => {
-        if (isSolved) onSolved?.();
-    });
+    const clearVerdict = () => {
+        verdict = null;
+    };
+
+    const confirmKey = () => {
+        if (userKey.trim().length === 0) return;
+
+        verdict = isCorrect ? "exact" : isDecodedCorrectly ? "decoded" : "wrong";
+        if (verdict !== "wrong") onSolved?.();
+    };
 </script>
 
 <section class="tool-panel">
     <h2>Polybius Square Solver</h2>
 
-    <div class="layout-wrapper">
-        <!-- Main Conversion Workspace Loop -->
-        <div class="cipher-flow">
-            <div class="message-card encoded-card">
-                <span class="step-label">ENCODED MESSAGE (COORDINATES)</span>
-                <p class="cipher-text">{cipherText}</p>
-            </div>
+    <div class="cipher-flow">
+        <div class="message-card encoded-card">
+            <span class="step-label">ENCODED MESSAGE (COORDINATES)</span>
+            <p class="cipher-text">{coordinatePairs}</p>
+        </div>
 
-            <div class="flow-arrow" aria-hidden="true">↓</div>
-
-            <div class="key-card">
-                <label for="polybius-key">ENTER THE GRID KEYWORD</label>
-                <input
-                    id="polybius-key"
-                    bind:value={userKey}
-                    type="text"
-                    placeholder="Guess the secret keyword..."
-                    autocomplete="off"
-                    spellcheck="false"
-                />
-
-                {#if userKey.length > 0}
-                    {#if isCorrect}
-                        <p class="feedback correct">✓ Perfect match! Excellent cryptographic analysis!</p>
-                    {:else if isDecodedCorrectly}
-                        <p class="feedback correct">✓ Decoded correctly! (Keys share matching visual layouts).</p>
-                    {/if}
-                {/if}
-            </div>
-
-            <div class="flow-arrow" aria-hidden="true">↓</div>
-
-            <div class="message-card decoded-card">
-                <span class="step-label">DECODED MESSAGE OUTPUT</span>
-                <p class="decoded-text" class:success-text={isDecodedCorrectly}>
-                    {decodeText || "The plaintext message transforms here..."}
-                </p>
-            </div>
+        <div class="key-card">
+            <label for="polybius-key">ENTER THE GRID KEYWORD</label>
+            <input
+                id="polybius-key"
+                bind:value={userKey}
+                oninput={clearVerdict}
+                type="text"
+                placeholder="Guess the secret keyword..."
+                autocomplete="off"
+                spellcheck="false"
+            />
         </div>
 
         <!-- Interactive Structural 5x5 Matrix Block Blueprint -->
@@ -156,7 +145,7 @@
                         {@const charIndex = rowIndex * 5 + colIndex}
                         {@const currentChar = currentGridString[charIndex]}
                         {@const isKeyChar = normalizeKey(userKey).includes(currentChar)}
-						
+
                         <div class="grid-cell" class:key-member={isKeyChar && userKey.length > 0}>
                             <span class="letter">
                                 {currentChar === 'i' ? 'I/J' : currentChar?.toUpperCase()}
@@ -166,6 +155,32 @@
                     {/each}
                 {/each}
             </div>
+        </div>
+
+        <div class="confirm-row">
+            <button
+                type="button"
+                class="confirm-button"
+                onclick={confirmKey}
+                disabled={userKey.trim().length === 0}
+            >
+                Confirm keyword
+            </button>
+
+            {#if verdict === "exact"}
+                <p class="feedback correct">✓ Perfect match! Excellent cryptographic analysis!</p>
+            {:else if verdict === "decoded"}
+                <p class="feedback correct">✓ Decoded correctly! (Keys share matching visual layouts).</p>
+            {:else if verdict === "wrong"}
+                <p class="feedback incorrect">✗ That keyword doesn't decode the message. Keep trying!</p>
+            {/if}
+        </div>
+
+        <div class="message-card decoded-card">
+            <span class="step-label">DECODED MESSAGE OUTPUT</span>
+            <p class="decoded-text" class:success-text={verdict === "exact" || verdict === "decoded"}>
+                {decodeText || "The plaintext message transforms here..."}
+            </p>
         </div>
     </div>
 </section>
@@ -185,18 +200,6 @@
         font-size: 1.6rem;
         text-align: center;
         color: #ffffff;
-    }
-
-    .layout-wrapper {
-        display: grid;
-        grid-template-columns: 1fr;
-        gap: 1.5rem;
-    }
-
-    @media (min-width: 768px) {
-        .layout-wrapper {
-            grid-template-columns: 1.2fr 0.8fr;
-        }
     }
 
     .cipher-flow {
@@ -268,16 +271,6 @@
         border-color: #0284c7;
     }
 
-    .flow-arrow {
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        color: #6b7280;
-        font-size: 1.75rem;
-        font-weight: 800;
-        line-height: 1;
-    }
-
     .feedback {
         margin: 0.75rem 0 0;
         padding: 0.65rem 0.8rem;
@@ -290,6 +283,42 @@
         color: #34d399;
     }
 
+    .feedback.incorrect {
+        background: #7f1d1d;
+        color: #fca5a5;
+    }
+
+    .confirm-row {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .confirm-button {
+        width: 100%;
+        padding: 0.85rem 1rem;
+        border: none;
+        border-radius: 8px;
+        background: #0284c7;
+        color: #ffffff;
+        font: inherit;
+        font-weight: 700;
+        cursor: pointer;
+    }
+
+    .confirm-button:hover:not(:disabled) {
+        background: #0369a1;
+    }
+
+    .confirm-button:disabled {
+        background: #374151;
+        color: #9ca3af;
+        cursor: not-allowed;
+    }
+
+    .confirm-row .feedback {
+        margin-top: 0.75rem;
+    }
+
     /* Matrix Grid Framework Styles */
     .polybius-grid-wrapper {
         display: grid;
@@ -299,6 +328,10 @@
         padding: 8px;
         border-radius: 8px;
         aspect-ratio: 1;
+        width: 100%;
+        max-width: 420px;
+        margin: 0 auto;
+        box-sizing: border-box;
     }
 
     .grid-label {

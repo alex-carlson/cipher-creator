@@ -219,17 +219,19 @@
 		{/each}
 	</div>
 
-	<button
-		type="button"
-		class="font-download"
-		onclick={downloadFont}
-		disabled={glyphList.length === 0}
-	>
-		<Download size={16} />
-		Download font (.ttf)
-	</button>
-	{#if fontExportError}
-		<p class="font-export-error" role="alert">{fontExportError}</p>
+	{#if allSolved}
+		<button
+			type="button"
+			class="font-download"
+			onclick={downloadFont}
+			disabled={glyphList.length === 0}
+		>
+			<Download size={16} />
+			Download font (.ttf)
+		</button>
+		{#if fontExportError}
+			<p class="font-export-error" role="alert">{fontExportError}</p>
+		{/if}
 	{/if}
 
 	{#if allSolved}
